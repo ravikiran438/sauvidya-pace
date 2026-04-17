@@ -1,7 +1,7 @@
 # Sauvidya PACE
 
 **Status:** Draft v0.1.0
-**Paper:** Sauvidya: An Accessibility Protocol for Agent-to-Principal Interaction in Autonomous Agent Networks
+**Paper:** [Sauvidya: An Accessibility Protocol for Agent-to-Principal Interaction in Autonomous Agent Networks](https://doi.org/10.5281/zenodo.19633139)
 **Extension URI:** `https://github.com/ravikiran438/sauvidya-pace/v1`
 **License:** Apache 2.0
 
@@ -79,12 +79,10 @@ invariants.
                   Interaction in Autonomous Agent Networks},
   year         = {2026},
   publisher    = {Zenodo},
-  doi          = {},
-  url          = {}
+  doi          = {10.5281/zenodo.19633139},
+  url          = {https://doi.org/10.5281/zenodo.19633139}
 }
 ```
-
-DOI will be added once the paper is published on Zenodo.
 
 ## License
 
