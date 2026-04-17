@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant G as Guardian
+    participant PCP as PCP (on-device)
+    participant Agent as Service Agent
+    participant P as Principal (Elder)
+
+    G->>PCP: Declare capabilities (v1)
+    Note over PCP: vision: low, language: te,<br/>cognitive: mild_decline,<br/>decision_capacity: fluctuating
+
+    Agent->>PCP: Read PCP
+    Agent->>Agent: Compute InteractionModality<br/>(voice, Telugu, slow, max 2 options)
+
+    Agent->>Agent: ConsentCapacityCheck<br/>(passive: 10:15 AM, 1 interaction today)
+    Note over Agent: capacity_signal: 0.82<br/>recommendation: proceed
+
+    Agent->>P: Voice call in Telugu<br/>"Amma, two home aide options..."
+    P->>Agent: "First one sounds good"
+    Agent->>Agent: Create ConsentRecord<br/>with PACE metadata
+
+    Note over Agent: 6 weeks later...
+    Agent->>PCP: WelfareTrace check
+    Note over PCP: interaction_success_rate: 0.78<br/>ccc_trend: stable

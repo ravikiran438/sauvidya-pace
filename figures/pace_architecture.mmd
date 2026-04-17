@@ -1,0 +1,16 @@
+graph TD
+    G[Guardian] -->|declares| PCP[PrincipalCapabilityProfile<br/>on-device, 8 dimensions]
+    PCP -->|read by| Agent[Agent]
+    Agent -->|computes| IM[InteractionModality<br/>adapted communication plan]
+    IM -->|before consent| CCC{ConsentCapacityCheck<br/>capacity_signal >= threshold?}
+    CCC -->|proceed/simplify| CR[ConsentRecord<br/>with PACE metadata]
+    CCC -->|defer| WAIT[Wait for next valid window]
+    CCC -->|escalate| GN[Notify Guardian]
+    CR -->|governed by| AIC[AdaptiveInteractionContract<br/>time windows, option limits,<br/>violation policy]
+    AIC -->|outcome feeds| WT[WelfareTrace<br/>accessibility metrics]
+    WT -->|declining trajectory| G
+
+    style PCP fill:#d4edda,stroke:#28a745
+    style CCC fill:#fff3cd,stroke:#ffc107
+    style AIC fill:#cce5ff,stroke:#0d6efd
+    style GN fill:#f8d7da,stroke:#dc3545
