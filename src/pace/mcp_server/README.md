@@ -7,14 +7,31 @@ client; see the VSCode section below for one concrete configuration.
 
 ## Install
 
+**For end users (no clone needed):**
+
+Run directly with `uvx` in an ephemeral environment:
+
+```bash
+uvx --from 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.1.0' pace-mcp
+```
+
+Or install persistently with `pip` into an existing venv:
+
+```bash
+pip install 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.1.0'
+```
+
+**For contributors (clone):**
+
 From the repository root:
 
 ```bash
 pip install -e '.[mcp]'
 ```
 
-This installs the MCP Python SDK alongside the PACE package and
-registers the `pace-mcp` console script.
+Either path installs the MCP Python SDK alongside the PACE package
+and registers the `pace-mcp` console script in the active Python
+environment.
 
 ## Run
 
@@ -49,7 +66,27 @@ for input schemas and output shapes.
 ## Wire into VSCode
 
 Add this to `.vscode/mcp.json` at your workspace root (or configure
-globally via your VSCode user settings, under the MCP section):
+globally via your VSCode user settings, under the MCP section).
+
+**Option A — `uvx` from git URL (no persistent install):**
+
+```json
+{
+  "servers": {
+    "pace": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.1.0",
+        "pace-mcp"
+      ]
+    }
+  }
+}
+```
+
+**Option B — absolute path to a pre-installed binary:**
 
 ```json
 {
