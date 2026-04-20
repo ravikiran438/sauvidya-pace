@@ -12,7 +12,14 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest>=8.0",
+    "pytest-asyncio>=0.23",
 ]
+mcp = [
+    "mcp>=1.0",
+]
+
+[project.scripts]
+pace-mcp = "pace.mcp_server.server:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -24,3 +31,4 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]
+asyncio_mode = "auto"
