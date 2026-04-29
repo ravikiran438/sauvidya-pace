@@ -13,10 +13,12 @@ skill maintenance, and emergency handoff.
 PACE Core answers "what can the principal do, and how should we
 accommodate that?" — a defensive question. This extension answers
 "where do we compensate, where do we amplify, and what must we never
-replace?" — an offensive question. Both are needed for principals who
-would benefit from agent prosthesis: elderly users with cognitive
-decline, BCI users with motor, attentional, or affective channels,
-and autistic users with sensory or social-interpretation needs.
+replace?" — an offensive question. Both questions apply broadly to
+any agent acting on a principal's behalf, and become most acute for
+principals who benefit from active prosthesis: elderly users with
+cognitive decline, BCI users with motor, attentional, or affective
+channels, and autistic users with sensory or social-interpretation
+needs.
 
 The risks of agent prosthesis are non-trivial. Skill atrophy is
 empirically attested: habitual GPS users show measurable degradation
