@@ -19,9 +19,14 @@ from pace.mcp_server.tools import (
     ToolInvocationError,
     handle_validate_ccc_gate,
     handle_validate_ccc_privacy,
+    handle_validate_emergency_boundary,
+    handle_validate_identity_preservation,
     handle_validate_im_precondition,
     handle_validate_language_match,
     handle_validate_option_count,
+    handle_validate_principal_capability_profile,
+    handle_validate_reversibility,
+    handle_validate_skill_maintenance,
     handle_validate_time_window,
     list_tool_names,
 )
@@ -99,6 +104,32 @@ def test_all_schemas_have_shape():
         assert "description" in schema, f"{name} missing description"
         assert "inputSchema" in schema, f"{name} missing inputSchema"
         assert schema["inputSchema"]["type"] == "object"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# validate_principal_capability_profile (standalone PCP structural check)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_validate_pcp_happy_path():
+    result = json.loads(
+        handle_validate_principal_capability_profile({"pcp": _pcp()})
+    )
+    assert result["ok"] is True
+    assert result["principal_id"] == "p1"
+    assert result["version"] == "v1"
+
+
+def test_validate_pcp_rejects_missing_language():
+    pcp = _pcp()
+    del pcp["language"]
+    with pytest.raises(ToolInvocationError, match="invalid pcp"):
+        handle_validate_principal_capability_profile({"pcp": pcp})
+
+
+def test_validate_pcp_rejects_non_object():
+    with pytest.raises(ToolInvocationError, match="expected object"):
+        handle_validate_principal_capability_profile({"pcp": "not-a-dict"})
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -305,3 +336,163 @@ def test_option_count_non_integer_raises():
         handle_validate_option_count(
             {"contract": _contract(), "options_presented": "five"}
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# augmentation_profile extension handlers
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _aug_profile_payload(identity_consent: bool = False) -> dict:
+    return {
+        "principal_id": "user-123",
+        "pcp_version": "2026-04-25.v1",
+        "axes": [
+            {"name": "social_interpretation", "kind": "compensate"},
+            {"name": "executive_function", "kind": "compensate"},
+            {"name": "independent_email", "kind": "preserve"},
+        ],
+        "emergency_triggers": [
+            {"name": "medical_keyword", "description": "med phrase detected"}
+        ],
+        "identity_consent": identity_consent,
+        "declared_at": "2026-04-25T12:00:00+00:00",
+        "declared_by": "principal",
+    }
+
+
+def _aug_action_payload(
+    axis_name: str = "social_interpretation",
+    mediation: str = "agent_compensated",
+    alters_identity: bool = False,
+    at: str = "2026-04-25T13:00:00+00:00",
+) -> dict:
+    return {
+        "principal_id": "user-123",
+        "axis_name": axis_name,
+        "mediation": mediation,
+        "alters_identity": alters_identity,
+        "description": "test action",
+        "at": at,
+    }
+
+
+def test_validate_reversibility_passes_with_no_reversion():
+    result = json.loads(
+        handle_validate_reversibility(
+            {"action": _aug_action_payload(), "reversion_events": []}
+        )
+    )
+    assert result["ok"] is True
+
+
+def test_validate_reversibility_rejects_action_after_reversion():
+    reversion = {
+        "principal_id": "user-123",
+        "axis_name": "social_interpretation",
+        "reverted_at": "2026-04-25T12:30:00+00:00",
+        "reverted_by": "principal",
+    }
+    result = json.loads(
+        handle_validate_reversibility(
+            {
+                "action": _aug_action_payload(at="2026-04-25T13:00:00+00:00"),
+                "reversion_events": [reversion],
+            }
+        )
+    )
+    assert result["ok"] is False
+    assert "was reverted" in result["error"]
+
+
+def test_validate_identity_preservation_passes_without_alteration():
+    result = json.loads(
+        handle_validate_identity_preservation(
+            {"profile": _aug_profile_payload(), "action": _aug_action_payload()}
+        )
+    )
+    assert result["ok"] is True
+
+
+def test_validate_identity_preservation_rejects_alteration_without_consent():
+    result = json.loads(
+        handle_validate_identity_preservation(
+            {
+                "profile": _aug_profile_payload(identity_consent=False),
+                "action": _aug_action_payload(alters_identity=True),
+            }
+        )
+    )
+    assert result["ok"] is False
+    assert "identity_consent" in result["error"]
+
+
+def test_validate_skill_maintenance_passes_for_compensate_axis():
+    result = json.loads(
+        handle_validate_skill_maintenance(
+            {
+                "profile": _aug_profile_payload(),
+                "action": _aug_action_payload(axis_name="social_interpretation"),
+            }
+        )
+    )
+    assert result["ok"] is True
+
+
+def test_validate_skill_maintenance_rejects_preserve_axis():
+    result = json.loads(
+        handle_validate_skill_maintenance(
+            {
+                "profile": _aug_profile_payload(),
+                "action": _aug_action_payload(axis_name="independent_email"),
+            }
+        )
+    )
+    assert result["ok"] is False
+    assert "preserve" in result["error"]
+
+
+def test_validate_emergency_boundary_passes_with_no_handoff():
+    result = json.loads(
+        handle_validate_emergency_boundary(
+            {"action": _aug_action_payload(), "handoff_events": []}
+        )
+    )
+    assert result["ok"] is True
+
+
+def test_validate_emergency_boundary_rejects_action_during_unacked_handoff():
+    handoff = {
+        "principal_id": "user-123",
+        "trigger_name": "medical_keyword",
+        "fired_at": "2026-04-25T12:30:00+00:00",
+    }
+    result = json.loads(
+        handle_validate_emergency_boundary(
+            {
+                "action": _aug_action_payload(at="2026-04-25T13:00:00+00:00"),
+                "handoff_events": [handoff],
+            }
+        )
+    )
+    assert result["ok"] is False
+    assert "awaiting human" in result["error"]
+
+
+def test_validate_emergency_boundary_passes_after_acknowledgement():
+    handoff = {
+        "principal_id": "user-123",
+        "trigger_name": "medical_keyword",
+        "fired_at": "2026-04-25T12:00:00+00:00",
+        "human_acknowledged_at": "2026-04-25T12:10:00+00:00",
+        "human_acknowledged_by": "ops-staff",
+    }
+    result = json.loads(
+        handle_validate_emergency_boundary(
+            {
+                "action": _aug_action_payload(at="2026-04-25T13:00:00+00:00"),
+                "handoff_events": [handoff],
+            }
+        )
+    )
+    assert result["ok"] is True

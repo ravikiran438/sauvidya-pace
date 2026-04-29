@@ -41,11 +41,14 @@ SERVER_NAME = "pace"
 SERVER_VERSION = "0.1.0"
 SERVER_INSTRUCTIONS = (
     "PACE (Sauvidya, principal accessibility contract) reference "
-    "server. Exposes six validators: interaction-modality "
-    "precondition, language match, consent-capacity gate, "
-    "consent-capacity privacy, contract time-window, and option-count "
-    "overload. All tools take and return JSON. See the project README "
-    "for schemas."
+    "server. Exposes seven Core validators (PCP structural; "
+    "interaction-modality precondition; language match; "
+    "consent-capacity gate; consent-capacity privacy; contract "
+    "time-window; option-count overload) plus four "
+    "augmentation_profile extension validators (AUG-1 reversibility, "
+    "AUG-3 identity preservation, AUG-4 skill maintenance, AUG-5 "
+    "emergency boundary). All tools take and return JSON. See the "
+    "project README for schemas."
 )
 
 
@@ -127,7 +130,9 @@ def run_doctor() -> int:
             failed.append(f"{name}: registration incomplete")
 
     total = len(schema_names | handler_names)
-    passing = total - sum(1 for n in failed if ":" in n)
+    # Count only per-tool registration failures, not the registry-set
+    # mismatch lines (which are aggregate diagnostics, not per-tool).
+    passing = total - sum(1 for n in failed if ": registration incomplete" in n)
 
     if failed:
         print(f"\n{passing}/{total} tools registered correctly.")
