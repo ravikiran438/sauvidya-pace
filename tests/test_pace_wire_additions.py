@@ -57,7 +57,7 @@ def _ref(**overrides) -> AccessibilityServiceRef:
 
 
 def test_extension_uri_is_stable():
-    assert PACE_EXTENSION_URI == "https://github.com/ravikiran438/sauvidya-pace/v1"
+    assert PACE_EXTENSION_URI == "https://ravikiran438.github.io/sauvidya-pace/v1"
 
 
 def test_service_ref_round_trip():

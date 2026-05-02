@@ -2,7 +2,7 @@
 
 **Status:** Draft v0.1.0
 **Paper:** [Sauvidya: An Accessibility Protocol for Agent-to-Principal Interaction in Autonomous Agent Networks](https://doi.org/10.5281/zenodo.19633139)
-**Extension URI:** `https://github.com/ravikiran438/sauvidya-pace/v1`
+**Extension URI:** `https://ravikiran438.github.io/sauvidya-pace/v1`
 **License:** Apache 2.0
 
 Sauvidya (Sanskrit for *with proper knowledge*) defines the **PACE**
@@ -69,6 +69,29 @@ pytest -v
 
 32 tests covering type construction, bounds, and all six validator
 invariants.
+
+## Extension Manifest
+
+This repository publishes a JSON-Schema manifest describing the
+AgentCard payload a PACE-aware agent declares under
+`capabilities.extensions[]`:
+
+- Machine-readable: [`v1/manifest.json`](v1/manifest.json)
+- Human-readable: [`v1/SPEC.md`](v1/SPEC.md)
+- Extension URI: `https://ravikiran438.github.io/sauvidya-pace/v1`
+
+The PACE AgentCard descriptor is `AccessibilityServiceRef` (see
+[`src/pace/types/accessibility_service_ref.py`](src/pace/types/accessibility_service_ref.py));
+the manifest is auto-generated from it. The augmentation-profile
+sub-extension follows the same layout at
+[`extensions/augmentation-profile/v1/manifest.json`](extensions/augmentation-profile/v1/manifest.json) /
+[`SPEC.md`](extensions/augmentation-profile/v1/SPEC.md).
+
+The manifest is exploratory: A2A 1.0 does not yet prescribe a schema-
+discovery convention for extensions. This repository ships the
+manifest as a reference implementation; a generic validator can fetch
+the JSON and validate any declared payload without protocol-specific
+code.
 
 ## Citation
 

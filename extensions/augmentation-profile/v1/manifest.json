@@ -1,7 +1,7 @@
 {
   "manifest_version": "1.0.0",
   "extension": {
-    "uri": "https://github.com/ravikiran438/sauvidya-pace/extensions/augmentation-profile/v1",
+    "uri": "https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1",
     "name": "PACE Augmentation-Profile Extension",
     "description": "Active augmentation actions for principals, with reversibility and identity-preservation guarantees.",
     "version": "1.0.0",

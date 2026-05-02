@@ -23,7 +23,7 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-PACE_EXTENSION_URI = "https://github.com/ravikiran438/sauvidya-pace/v1"
+PACE_EXTENSION_URI = "https://ravikiran438.github.io/sauvidya-pace/v1"
 
 
 class AccessibilityServiceRef(BaseModel):

@@ -1,7 +1,7 @@
 {
   "manifest_version": "1.0.0",
   "extension": {
-    "uri": "https://github.com/ravikiran438/sauvidya-pace/v1",
+    "uri": "https://ravikiran438.github.io/sauvidya-pace/v1",
     "name": "Sauvidya PACE Framework",
     "description": "Principal accessibility / capacity / engagement layer for A2A orchestrators.",
     "version": "1.0.0",

@@ -10,7 +10,7 @@ from pace.types import PACE_EXTENSION_URI, ResponseClassification
 
 def test_pace_core_extension_uri():
     assert PACE_EXTENSION_URI == (
-        "https://github.com/ravikiran438/sauvidya-pace/v1"
+        "https://ravikiran438.github.io/sauvidya-pace/v1"
     )
 
 

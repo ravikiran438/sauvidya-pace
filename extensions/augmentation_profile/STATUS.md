@@ -1,7 +1,7 @@
 # Augmentation Profile: Status
 
 **Stage:** Reference implementation
-**Extension URI:** https://github.com/ravikiran438/sauvidya-pace/extensions/augmentation-profile/v1
+**Extension URI:** https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1
 **First drafted:** 2026-04-25
 **Depends on:** PACE Core v0.1+
 **Maintainer:** Ravi Kiran Kadaboina (@ravikiran438)
