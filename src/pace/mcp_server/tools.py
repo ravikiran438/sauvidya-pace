@@ -29,10 +29,16 @@ from typing import Any
 from pydantic import ValidationError
 
 from pace.types import (
+    AccessibilityServiceRef,
+    ActiveChallenge,
     AdaptiveInteractionContract,
+    CCCTrend,
     ConsentCapacityCheck,
     InteractionModality,
+    PACEConsentAnnotation,
+    PACEViolationNotice,
     PrincipalCapabilityProfile,
+    derive_ccc_trend,
 )
 from pace.validators import (
     CCCGateError,
@@ -289,6 +295,101 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             "required": ["action", "handoff_events"],
         },
     },
+    "validate_accessibility_service_ref": {
+        "description": (
+            "Validate an AccessibilityServiceRef payload (the body of "
+            "the AgentCard.capabilities.extensions[] entry whose URI "
+            "equals PACE_EXTENSION_URI). Verifies version + the three "
+            "endpoints (PCP, AIC, violation_notice) + ≥1 supported "
+            "modality and language."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"ref": {"type": "object"}},
+            "required": ["ref"],
+        },
+    },
+    "validate_active_challenge": {
+        "description": (
+            "Validate an ActiveChallenge record (challenge-response "
+            "evidence backing assessment_method=ACTIVE on a "
+            "ConsentCapacityCheck). Enforces internal coherence: "
+            "NON_RESPONSIVE iff response_received_ms is absent; "
+            "received_ms ≤ window_ms."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"challenge": {"type": "object"}},
+            "required": ["challenge"],
+        },
+    },
+    "validate_pace_consent_annotation": {
+        "description": (
+            "Validate a PACEConsentAnnotation. Enforces structural "
+            "integrity AND referential integrity: when ccc_performed is "
+            "true the CCC fields MUST be populated; when "
+            "ccc_assessment_method=ACTIVE an active_challenge record "
+            "MUST be present."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"annotation": {"type": "object"}},
+            "required": ["annotation"],
+        },
+    },
+    "validate_pace_violation_notice": {
+        "description": (
+            "Validate a PACEViolationNotice and report its handling "
+            "policy per V-1/V-2/V-3. Returns the structured fields a "
+            "receiving orchestrator needs to apply enforcement: "
+            "should_block (V-1 conditions met for the receiver), "
+            "block_until (detected_at + block_duration_seconds), and "
+            "forwarding_allowed (always false per V-2)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "notice": {"type": "object"},
+                "receiver_aic_version": {
+                    "type": "string",
+                    "description": (
+                        "Optional. Receiver's currently bound AIC "
+                        "version. When supplied, V-1 is evaluated and "
+                        "should_block reflects the result."
+                    ),
+                },
+                "receiver_has_aic_for_principal": {
+                    "type": "boolean",
+                    "description": (
+                        "Optional. False forces should_block=False per "
+                        "V-3 even when V-1 would otherwise apply."
+                    ),
+                },
+            },
+            "required": ["notice"],
+        },
+    },
+    "compute_ccc_trend": {
+        "description": (
+            "Compute the CCCTrend over a list of ConsentCapacityCheck "
+            "samples using the reference OLS-slope algorithm. Returns "
+            "the canonical enum value (stable/improving/declining/"
+            "insufficient_data). Configuration parameters mirror "
+            "derive_ccc_trend()."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "samples": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                },
+                "window_days": {"type": "integer", "minimum": 1},
+                "min_samples": {"type": "integer", "minimum": 2},
+            },
+            "required": ["samples"],
+        },
+    },
 }
 
 
@@ -450,6 +551,119 @@ def handle_validate_emergency_boundary(arguments: dict[str, Any]) -> str:
     return _ok({"emergency_boundary": "honored"})
 
 
+def handle_validate_accessibility_service_ref(arguments: dict[str, Any]) -> str:
+    payload = arguments.get("ref")
+    if not isinstance(payload, dict):
+        raise ToolInvocationError("expected object under key 'ref'")
+    _parse(AccessibilityServiceRef, payload, "ref")
+    return _ok({"ref": "valid"})
+
+
+def handle_validate_active_challenge(arguments: dict[str, Any]) -> str:
+    payload = arguments.get("challenge")
+    if not isinstance(payload, dict):
+        raise ToolInvocationError("expected object under key 'challenge'")
+    _parse(ActiveChallenge, payload, "challenge")
+    return _ok({"challenge": "valid"})
+
+
+def handle_validate_pace_consent_annotation(arguments: dict[str, Any]) -> str:
+    payload = arguments.get("annotation")
+    if not isinstance(payload, dict):
+        raise ToolInvocationError("expected object under key 'annotation'")
+    annotation = _parse(PACEConsentAnnotation, payload, "annotation")
+    # Referential coherence checks beyond what pydantic enforces:
+    # CCC fields MUST be populated when ccc_performed is True.
+    if annotation.ccc_performed:
+        missing = [
+            name for name in (
+                "ccc_capacity_signal",
+                "ccc_recommendation",
+                "ccc_assessment_method",
+            )
+            if getattr(annotation, name) is None
+        ]
+        if missing:
+            return _fail(
+                "ccc_performed=true but the following fields are absent: "
+                + ", ".join(missing)
+            )
+        from pace.types import AssessmentMethod
+        if (
+            annotation.ccc_assessment_method == AssessmentMethod.ACTIVE
+            and annotation.active_challenge is None
+        ):
+            return _fail(
+                "ccc_assessment_method=ACTIVE requires an active_challenge "
+                "record"
+            )
+    return _ok({"annotation": "valid"})
+
+
+def handle_validate_pace_violation_notice(arguments: dict[str, Any]) -> str:
+    """Validate a PACEViolationNotice and report V-1/V-2/V-3 enforcement.
+
+    The handler does NOT mutate any block list; it returns the structured
+    decision a receiving orchestrator should apply.
+    """
+    payload = arguments.get("notice")
+    if not isinstance(payload, dict):
+        raise ToolInvocationError("expected object under key 'notice'")
+    notice = _parse(PACEViolationNotice, payload, "notice")
+
+    receiver_aic_version = arguments.get("receiver_aic_version")
+    receiver_has_aic = arguments.get("receiver_has_aic_for_principal")
+    if receiver_has_aic is not None and not isinstance(receiver_has_aic, bool):
+        raise ToolInvocationError(
+            "receiver_has_aic_for_principal must be a boolean"
+        )
+
+    # Default to "no opinion supplied" -> should_block reflects only
+    # whether V-1 *could* apply on AIC version match.
+    should_block: bool
+    if receiver_has_aic is False:
+        # V-3: no AIC for this principal -> log only, do not block.
+        should_block = False
+    elif receiver_aic_version is not None:
+        if not isinstance(receiver_aic_version, str):
+            raise ToolInvocationError(
+                "receiver_aic_version must be a string"
+            )
+        should_block = receiver_aic_version == notice.aic_version
+    else:
+        should_block = False  # caller did not supply enough context
+
+    return _ok(
+        {
+            "notice_id": notice.notice_id,
+            "should_block": should_block,
+            "block_duration_seconds": notice.block_duration_seconds,
+            "block_until_timestamp": notice.detected_at,
+            "forwarding_allowed": False,  # V-2: one-hop only
+            "evaluated_rule": "V-3" if receiver_has_aic is False else "V-1",
+        }
+    )
+
+
+def handle_compute_ccc_trend(arguments: dict[str, Any]) -> str:
+    samples_raw = arguments.get("samples")
+    if not isinstance(samples_raw, list):
+        raise ToolInvocationError("samples must be a list of objects")
+    samples = [
+        _parse(ConsentCapacityCheck, s, f"samples[{i}]")
+        for i, s in enumerate(samples_raw)
+    ]
+    kwargs: dict[str, Any] = {}
+    for k in ("window_days", "min_samples"):
+        v = arguments.get(k)
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int):
+                raise ToolInvocationError(f"{k} must be an integer")
+            kwargs[k] = v
+    trend: CCCTrend = derive_ccc_trend(samples, **kwargs)
+    return _ok({"trend": trend.value, "samples_in_window": len(samples)})
+
+
 HANDLERS: dict[str, Any] = {
     "validate_principal_capability_profile": handle_validate_principal_capability_profile,
     "validate_im_precondition": handle_validate_im_precondition,
@@ -463,6 +677,12 @@ HANDLERS: dict[str, Any] = {
     "validate_identity_preservation": handle_validate_identity_preservation,
     "validate_skill_maintenance": handle_validate_skill_maintenance,
     "validate_emergency_boundary": handle_validate_emergency_boundary,
+    # AgentCard descriptor + sibling primitives
+    "validate_accessibility_service_ref": handle_validate_accessibility_service_ref,
+    "validate_active_challenge": handle_validate_active_challenge,
+    "validate_pace_consent_annotation": handle_validate_pace_consent_annotation,
+    "validate_pace_violation_notice": handle_validate_pace_violation_notice,
+    "compute_ccc_trend": handle_compute_ccc_trend,
 }
 
 

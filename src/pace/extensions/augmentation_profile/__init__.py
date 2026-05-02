@@ -28,6 +28,7 @@ from .validators import (
 )
 
 __all__ = [
+    "EXTENSION_URI",
     "AugmentationAction",
     "AugmentationAxis",
     "AugmentationError",
@@ -44,3 +45,8 @@ __all__ = [
     "check_reversibility",
     "check_skill_maintenance",
 ]
+
+EXTENSION_URI = (
+    "https://github.com/ravikiran438/sauvidya-pace/"
+    "extensions/augmentation-profile/v1"
+)

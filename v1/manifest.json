@@ -1,0 +1,89 @@
+{
+  "manifest_version": "1.0.0",
+  "extension": {
+    "uri": "https://github.com/ravikiran438/sauvidya-pace/v1",
+    "name": "Sauvidya PACE Framework",
+    "description": "Principal accessibility / capacity / engagement layer for A2A orchestrators.",
+    "version": "1.0.0",
+    "publisher": "Ravi Kiran Kadaboina",
+    "human_readable_spec": "https://doi.org/10.5281/zenodo.19633139"
+  },
+  "agent_card_payload_schema": {
+    "description": "PACE-specific fields contributed to an A2A AgentCard.\n\nValidators detect PACE support by the presence of an entry in\n``capabilities.extensions[]`` whose ``uri`` equals\n``PACE_EXTENSION_URI``. The body of that entry SHOULD deserialize\nto this model.",
+    "properties": {
+      "version": {
+        "description": "PACE protocol semver this agent implements.",
+        "title": "Version",
+        "type": "string"
+      },
+      "pcp_endpoint": {
+        "description": "HTTPS URL where this agent exchanges PrincipalCapabilityProfile (PCP) metadata with the principal's PACE orchestrator. The endpoint MUST authenticate the orchestrator; PCPs are never fetched by remote A2A agents.",
+        "title": "Pcp Endpoint",
+        "type": "string"
+      },
+      "aic_endpoint": {
+        "description": "HTTPS URL pattern (with ``{principal_id}`` placeholder) where the AdaptiveInteractionContract for a given principal is fetched. Returns the orchestrator's currently bound AIC.",
+        "title": "Aic Endpoint",
+        "type": "string"
+      },
+      "violation_notice_endpoint": {
+        "description": "HTTPS URL where peer orchestrators POST PACEViolationNotice messages targeting this agent. REQUIRED so the violation broadcast loop has a destination per orchestrator.",
+        "title": "Violation Notice Endpoint",
+        "type": "string"
+      },
+      "supports_active_assessment": {
+        "default": true,
+        "description": "True if this agent implements active ConsentCapacityCheck (challenge-response). False means it falls back to passive interpolation only.",
+        "title": "Supports Active Assessment",
+        "type": "boolean"
+      },
+      "supported_modalities": {
+        "description": "PrimaryChannel values this agent can drive (e.g. ['voice', 'large_text', 'simple_visual']). Validators cross-check this against InteractionModality.modality_plan.primary_channel.",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Supported Modalities",
+        "type": "array"
+      },
+      "supported_languages": {
+        "description": "ISO 639-1 codes this agent can converse in. Used to fail fast when an AIC requires a language the agent cannot speak.",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Supported Languages",
+        "type": "array"
+      },
+      "guardian_escalation_endpoint": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "HTTPS URL the agent uses to escalate to a registered guardian. REQUIRED when the agent serves principals whose PCP indicates guardian_required decision_capacity.",
+        "title": "Guardian Escalation Endpoint"
+      }
+    },
+    "required": [
+      "version",
+      "pcp_endpoint",
+      "aic_endpoint",
+      "violation_notice_endpoint",
+      "supported_modalities",
+      "supported_languages"
+    ],
+    "title": "AccessibilityServiceRef",
+    "type": "object"
+  },
+  "wire_artefacts": [],
+  "invariants": [
+    "IM-1: InteractionModality MUST be computed from PCP before any interaction.",
+    "CCC-2: capacity_signal MUST NOT be transmitted to remote agents.",
+    "AIC-1: no interaction outside valid_time_windows unless emergency."
+  ]
+}

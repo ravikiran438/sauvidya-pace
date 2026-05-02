@@ -57,6 +57,12 @@ async def test_server_lists_tools_over_stdio():
         "validate_identity_preservation",
         "validate_skill_maintenance",
         "validate_emergency_boundary",
+        # AgentCard descriptor + sibling primitives
+        "validate_accessibility_service_ref",
+        "validate_active_challenge",
+        "validate_pace_consent_annotation",
+        "validate_pace_violation_notice",
+        "compute_ccc_trend",
     }
     assert names == expected
 
