@@ -6,7 +6,7 @@
     "description": "Principal accessibility / capacity / engagement layer for A2A orchestrators.",
     "version": "1.0.0",
     "publisher": "Ravi Kiran Kadaboina",
-    "human_readable_spec": "https://doi.org/10.5281/zenodo.19633139"
+    "human_readable_spec": "https://doi.org/10.5281/zenodo.19633138"
   },
   "agent_card_payload_schema": {
     "description": "PACE-specific fields contributed to an A2A AgentCard.\n\nValidators detect PACE support by the presence of an entry in\n``capabilities.extensions[]`` whose ``uri`` equals\n``PACE_EXTENSION_URI``. The body of that entry SHOULD deserialize\nto this model.",

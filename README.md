@@ -1,7 +1,7 @@
 # Sauvidya PACE
 
 **Status:** Draft v0.1.0
-**Paper:** [Sauvidya: An Accessibility Protocol for Agent-to-Principal Interaction in Autonomous Agent Networks](https://doi.org/10.5281/zenodo.19633139)
+**Paper:** [Sauvidya: An Accessibility Protocol for Agent-to-Principal Interaction in Autonomous Agent Networks](https://doi.org/10.5281/zenodo.19633138)
 **Extension URI:** `https://ravikiran438.github.io/sauvidya-pace/v1`
 **License:** Apache 2.0
 
@@ -34,6 +34,29 @@ protocol layers:
 - **Anumati** (consent) gains accessibility as a consent precondition
 - **Phala** (welfare feedback) gains capability-aware satisfaction measurement
 
+## AG-UI Binding
+
+PACE governs whether the principal can perceive, comprehend, and respond, so
+[AG-UI](https://github.com/ag-ui-protocol/ag-ui) — the agent↔human transport —
+is its natural carrier alongside A2A and MCP. The `pace.ag_ui` module
+([`src/pace/ag_ui/binding.py`](src/pace/ag_ui/binding.py)) carries the PACE data
+plane over AG-UI:
+
+- `envelope_state_snapshot(ref)` — publishes the `AccessibilityServiceRef`
+  capability envelope as an AG-UI `STATE_SNAPSHOT`, keyed by the PACE extension URI.
+- `active_challenge_interrupt(...)` — presents a ConsentCapacityCheck
+  (`ActiveChallenge`) as an AG-UI **interrupt** (`reason: "input_required"`),
+  binding the challenge text by hash and enforcing the response window via
+  `expiresAt`.
+- `resolve_active_challenge(...)` — turns the principal's resume payload back
+  into a typed, validated `ActiveChallenge`; a refusal is encoded in the payload,
+  never as a bare AG-UI cancel.
+
+The binding is dependency-free (plain JSON-serializable AG-UI event dicts) and
+follows the cross-cutting *Governance over AG-UI* convention documented at
+<https://ravikiran438.github.io/agent-protocol-stack/ag-ui/>. See
+[`tests/test_ag_ui_binding.py`](tests/test_ag_ui_binding.py) for worked examples.
+
 ## Repository Layout
 
 ```
@@ -43,6 +66,7 @@ sauvidya-pace/
 │   └── Pace.cfg            # TLC configuration
 ├── src/pace/
 │   ├── types/              # Pydantic type library (4 primitives)
+│   ├── ag_ui/              # AG-UI (agent↔human) binding
 │   └── validators/         # Runtime invariant validators
 ├── tests/                  # pytest suite
 └── adrs/                   # Architecture Decision Records
@@ -102,8 +126,8 @@ code.
                   Interaction in Autonomous Agent Networks},
   year         = {2026},
   publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.19633139},
-  url          = {https://doi.org/10.5281/zenodo.19633139}
+  doi          = {10.5281/zenodo.19633138},
+  url          = {https://doi.org/10.5281/zenodo.19633138}
 }
 ```
 

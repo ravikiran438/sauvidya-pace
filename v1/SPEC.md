@@ -6,7 +6,7 @@
 - **Protocol version:** 1.0.0
 - **Manifest envelope version:** 1.0.0
 - **Publisher:** Ravi Kiran Kadaboina
-- **Paper / human-readable spec:** https://doi.org/10.5281/zenodo.19633139
+- **Paper / human-readable spec:** https://doi.org/10.5281/zenodo.19633138
 
 Principal accessibility / capacity / engagement layer for A2A orchestrators.
 
