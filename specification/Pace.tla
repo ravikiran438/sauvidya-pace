@@ -2,7 +2,13 @@
 \* Copyright 2026 Ravi Kiran Kadaboina. Licensed under the Apache License, 2.0.
 \*
 \* TLA+ specification of the PACE principal accessibility protocol.
-\* Six safety properties verified under TLC.
+\*
+\* TLC checks five state invariants (see ``Invariants`` below):
+\*   IMPrecondition, CCCGate, AICOptionBound (AIC-2),
+\*   ViolationBlockEnforcement (V-1), AnnotationIntegrity.
+\* AIC-1, V-2 and V-3 are enforced by action guards and documented
+\* next to the invariants. PCP-Sovereignty, Privacy-Preservation and
+\* Non-Diagnosis are API-shape properties and are not modeled here.
 
 EXTENDS Naturals, Sequences, FiniteSets, TLC
 

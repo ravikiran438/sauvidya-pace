@@ -62,8 +62,9 @@ follows the cross-cutting *Governance over AG-UI* convention documented at
 ```
 sauvidya-pace/
 ├── specification/
-│   ├── Pace.tla            # TLA+ model (6 safety properties)
-│   └── Pace.cfg            # TLC configuration
+│   ├── Pace.tla                     # TLA+ model (5 TLC-checked invariants)
+│   ├── Pace.cfg                     # small model, under a second
+│   └── Pace-CrossOrchestrator.cfg   # two orchestrators, about 2 minutes
 ├── src/pace/
 │   ├── types/              # Pydantic type library (4 primitives)
 │   ├── ag_ui/              # AG-UI (agent↔human) binding
@@ -74,14 +75,38 @@ sauvidya-pace/
 
 ## Formal Safety Properties
 
-| Property | Statement |
-|---|---|
-| PCP-Sovereignty | No remote agent may write or modify a PCP |
-| IM-Precondition | No interaction without computing InteractionModality from PCP |
-| CCC-Gate | No consent without capacity check for fluctuating/limited principals |
-| AIC-Enforcement | Contract violations trigger automatic violation_policy |
-| Privacy-Preservation | CCC results never transmitted to remote agents |
-| Non-Diagnosis | No PACE primitive produces or stores a clinical assessment |
+| Property | Statement | How it is checked |
+|---|---|---|
+| PCP-Sovereignty | No remote agent may write or modify a PCP | API shape: the reference implementation has no remote write path. Not model-checked. |
+| IM-Precondition | No interaction without computing InteractionModality from PCP | TLC invariant `IMPrecondition`; validators `validate_im_precondition`, `validate_language_match` |
+| CCC-Gate | No consent without capacity check for fluctuating/limited principals | TLC invariant `CCCGate`; validator `validate_ccc_gate` |
+| AIC-Enforcement | Contract violations trigger automatic violation_policy | TLC invariant `AICOptionBound` (AIC-2); AIC-1 enforced by the `CreateConsent` action guard; validators `validate_time_window`, `validate_option_count` |
+| Privacy-Preservation | CCC results never transmitted to remote agents | Validator `validate_ccc_privacy`. Not model-checked. |
+| Non-Diagnosis | No PACE primitive produces or stores a clinical assessment | By construction: no primitive has a diagnostic field. Not model-checked. |
+
+The model also checks cross-orchestrator violation handling:
+`ViolationBlockEnforcement` (V-1) and `AnnotationIntegrity` are TLC
+invariants; V-2 (one-hop) and V-3 (scope) are enforced by the
+`ApplyViolationNotice` action structure.
+
+### Model checking
+
+Uses the TLA+ tools jar (`tla2tools.jar`) from
+<https://github.com/tlaplus/tlaplus/releases> and Java 11+.
+
+```bash
+cd specification
+java -cp tla2tools.jar tlc2.TLC -workers auto -deadlock -config Pace.cfg Pace
+java -cp tla2tools.jar tlc2.TLC -workers auto -deadlock -config Pace-CrossOrchestrator.cfg Pace
+```
+
+| Config | Distinct states | Result |
+|---|---|---|
+| `Pace.cfg` | 40,760 | no errors |
+| `Pace-CrossOrchestrator.cfg` | 8,249,080 | no errors |
+
+`-deadlock` disables deadlock checking; the model reaches terminal
+states by design (for example, once consent is recorded).
 
 ## Running Tests
 
