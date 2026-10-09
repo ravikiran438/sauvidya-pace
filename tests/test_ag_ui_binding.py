@@ -24,6 +24,10 @@ from pace.types.active_challenge import (
 )
 
 
+KEY = bytes(range(32))
+KEY_ID = "audit-key-1"
+
+
 def _ref() -> AccessibilityServiceRef:
     return AccessibilityServiceRef(
         version="0.1.0",
@@ -42,6 +46,8 @@ def _interrupt(window=300_000, posed="2026-04-01T10:00:00Z"):
         challenge_text="Repeat back the amount you are approving.",
         response_window_ms=window,
         posed_at=posed,
+        audit_key=KEY,
+        digest_key_id=KEY_ID,
     )
     return ev["outcome"]["interrupts"][0]
 
@@ -64,6 +70,8 @@ def test_interrupt_shape_and_identity():
         challenge_text="What did you just agree to?",
         response_window_ms=300_000,
         posed_at="2026-04-01T10:00:00Z",
+        audit_key=KEY,
+        digest_key_id=KEY_ID,
     )
     assert ev["type"] == "RUN_FINISHED"
     assert ev["outcome"]["type"] == "interrupt"
@@ -75,9 +83,10 @@ def test_interrupt_shape_and_identity():
     assert gov["uri"] == PACE_EXTENSION_URI            # B-1
     assert gov["type"] == "ActiveChallenge"
     # challenge_hash binds the interrupt to the exact text shown
-    assert gov["challenge_hash"] == ActiveChallenge.hash_canonical_text(
-        "What did you just agree to?"
+    assert gov["challenge_hash"] == ActiveChallenge.challenge_digest(
+        "ch-1", "What did you just agree to?", KEY
     )
+    assert gov["digest_key_id"] == KEY_ID
 
 
 def test_interrupt_expires_at_equals_window():
@@ -93,6 +102,8 @@ def test_interrupt_rejects_nonpositive_window():
             challenge_text="x",
             response_window_ms=0,
             posed_at="2026-04-01T10:00:00Z",
+            audit_key=KEY,
+            digest_key_id=KEY_ID,
         )
 
 
@@ -103,14 +114,14 @@ def test_resolve_resolved_roundtrips_to_valid_challenge():
     resume = {"interruptId": it["id"], "status": "resolved",
               "payload": {"response_text": "forty two dollars"}}
     ac = resolve_active_challenge(
-        interrupt=it, resume=resume,
+        interrupt=it, resume=resume, audit_key=KEY,
         classified_as=ResponseClassification.COMPREHENDED,
         response_received_ms=4200,
     )
     assert isinstance(ac, ActiveChallenge)
     assert ac.challenge_id == "ch-1"
     assert ac.challenge_hash == it["metadata"][GOVERNANCE_KEY]["challenge_hash"]
-    assert ac.response_hash == ActiveChallenge.hash_canonical_text("forty two dollars")
+    assert ac.response_hash == ActiveChallenge.response_digest("ch-1", "forty two dollars", KEY)
     assert ac.classified_as == ResponseClassification.COMPREHENDED
     assert ac.response_received_ms == 4200
 
@@ -119,11 +130,12 @@ def test_resolve_cancelled_is_non_responsive():
     it = _interrupt()
     ac = resolve_active_challenge(
         interrupt=it, resume={"interruptId": it["id"], "status": "cancelled"},
+        audit_key=KEY,
     )
     assert ac.classified_as == ResponseClassification.NON_RESPONSIVE
     assert ac.response_received_ms is None
     # absence is the empty-string hash, distinguishable from refusal
-    assert ac.response_hash == ActiveChallenge.hash_canonical_text("")
+    assert ac.response_hash == ActiveChallenge.response_digest("ch-1", "", KEY)
 
 
 def test_resolve_refused_in_payload_not_status():
@@ -131,13 +143,13 @@ def test_resolve_refused_in_payload_not_status():
     resume = {"interruptId": it["id"], "status": "resolved",
               "payload": {"refused": True}}
     ac = resolve_active_challenge(
-        interrupt=it, resume=resume,
+        interrupt=it, resume=resume, audit_key=KEY,
         classified_as=ResponseClassification.REFUSED,
         response_received_ms=1500,
     )
     assert ac.classified_as == ResponseClassification.REFUSED
     assert ac.response_received_ms == 1500              # refusal still has timing
-    assert ac.response_hash == ActiveChallenge.hash_canonical_text("")
+    assert ac.response_hash == ActiveChallenge.response_digest("ch-1", "", KEY)
 
 
 def test_resolve_rejects_foreign_interrupt():
@@ -145,7 +157,8 @@ def test_resolve_rejects_foreign_interrupt():
                "metadata": {GOVERNANCE_KEY: {"uri": "https://example.com/other/v1"}}}
     with pytest.raises(ValueError):
         resolve_active_challenge(
-            interrupt=foreign, resume={"interruptId": "x", "status": "cancelled"})
+            interrupt=foreign, resume={"interruptId": "x", "status": "cancelled"},
+            audit_key=KEY)
 
 
 def test_resolve_resolved_requires_classification():
@@ -155,4 +168,26 @@ def test_resolve_resolved_requires_classification():
             interrupt=it,
             resume={"interruptId": it["id"], "status": "resolved",
                     "payload": {"response_text": "ok"}},
+            audit_key=KEY,
+        )
+
+
+def test_resolve_rejects_tampered_challenge_text():
+    it = dict(_interrupt())
+    it["message"] = "Approve a larger amount."
+    with pytest.raises(ValueError, match="does not match"):
+        resolve_active_challenge(
+            interrupt=it,
+            resume={"interruptId": it["id"], "status": "cancelled"},
+            audit_key=KEY,
+        )
+
+
+def test_resolve_rejects_wrong_audit_key():
+    it = _interrupt()
+    with pytest.raises(ValueError, match="does not match"):
+        resolve_active_challenge(
+            interrupt=it,
+            resume={"interruptId": it["id"], "status": "cancelled"},
+            audit_key=bytes(range(1, 33)),
         )

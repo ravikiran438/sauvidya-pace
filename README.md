@@ -46,7 +46,8 @@ plane over AG-UI:
   capability envelope as an AG-UI `STATE_SNAPSHOT`, keyed by the PACE extension URI.
 - `active_challenge_interrupt(...)` — presents a ConsentCapacityCheck
   (`ActiveChallenge`) as an AG-UI **interrupt** (`reason: "input_required"`),
-  binding the challenge text by hash and enforcing the response window via
+  binding the challenge text by a keyed digest (HMAC-SHA256 under the
+  orchestrator's on-device audit key) and enforcing the response window via
   `expiresAt`.
 - `resolve_active_challenge(...)` — turns the principal's resume payload back
   into a typed, validated `ActiveChallenge`; a refusal is encoded in the payload,

@@ -88,18 +88,23 @@ def active_challenge_interrupt(
     challenge_text: str,
     response_window_ms: int,
     posed_at: str,
+    audit_key: bytes,
+    digest_key_id: str,
 ) -> dict[str, Any]:
     """Build a ``RUN_FINISHED`` interrupt presenting an ActiveChallenge.
 
     The challenge text is shown to the principal (``message``) and bound to the
-    interrupt by its canonical hash (in ``metadata.governance``), so the typed
+    interrupt by its keyed digest (in ``metadata.governance``), so the typed
     ``ActiveChallenge`` produced on resume is tamper-evidently linked to what
-    was actually asked. ``expiresAt`` enforces ``response_window_ms``.
+    was actually asked. ``audit_key`` is the orchestrator's on-device key; only
+    its ``digest_key_id`` travels. ``expiresAt`` enforces ``response_window_ms``.
     """
     if response_window_ms <= 0:
         raise ValueError("response_window_ms must be positive")
     ctype = ChallengeType(challenge_type)
-    challenge_hash = ActiveChallenge.hash_canonical_text(challenge_text)
+    challenge_hash = ActiveChallenge.challenge_digest(
+        challenge_id, challenge_text, audit_key
+    )
     expires_at = _iso(_parse_iso(posed_at) + timedelta(milliseconds=response_window_ms))
     interrupt = {
         "id": f"pace-cc-{challenge_id}",
@@ -114,6 +119,7 @@ def active_challenge_interrupt(
                 "challenge_id": challenge_id,
                 "challenge_type": ctype.value,
                 "challenge_hash": challenge_hash,
+                "digest_key_id": digest_key_id,
                 "response_window_ms": response_window_ms,
                 "posed_at": posed_at,
             }
@@ -129,6 +135,7 @@ def resolve_active_challenge(
     *,
     interrupt: dict[str, Any],
     resume: dict[str, Any],
+    audit_key: bytes,
     classified_as: ResponseClassification | str | None = None,
     response_received_ms: Optional[int] = None,
 ) -> ActiveChallenge:
@@ -138,11 +145,21 @@ def resolve_active_challenge(
     for a resolved response — comprehension grading is a PACE decision, not a
     wire concern. A ``status: "cancelled"`` resume is recorded as
     ``NON_RESPONSIVE`` regardless. Raises ``ValueError`` if the interrupt is not
-    a PACE ActiveChallenge (invariant B-1).
+    a PACE ActiveChallenge (invariant B-1), or if the challenge text shown
+    (``message``) no longer matches its digest under ``audit_key``.
     """
     gov = (interrupt.get("metadata") or {}).get(GOVERNANCE_KEY) or {}
     if gov.get("uri") != PACE_EXTENSION_URI or gov.get("type") != "ActiveChallenge":
         raise ValueError("interrupt is not a PACE ActiveChallenge")
+    if not ActiveChallenge.matches_challenge(
+        gov.get("challenge_id", ""),
+        interrupt.get("message", ""),
+        audit_key,
+        gov.get("challenge_hash", ""),
+    ):
+        raise ValueError(
+            "challenge text does not match challenge_hash under this audit key"
+        )
 
     status = resume.get("status")
     payload = resume.get("payload") or {}
@@ -167,8 +184,11 @@ def resolve_active_challenge(
     return ActiveChallenge(
         challenge_id=gov["challenge_id"],
         challenge_type=ChallengeType(gov["challenge_type"]),
+        digest_key_id=gov["digest_key_id"],
         challenge_hash=gov["challenge_hash"],
-        response_hash=ActiveChallenge.hash_canonical_text(response_text),
+        response_hash=ActiveChallenge.response_digest(
+            gov["challenge_id"], response_text, audit_key
+        ),
         response_window_ms=gov["response_window_ms"],
         response_received_ms=elapsed,
         classified_as=classified,

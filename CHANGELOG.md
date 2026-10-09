@@ -44,6 +44,15 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   `ConsentRecord.pace` block to the sibling `PACEConsentAnnotation`,
   referenced by `consent_record_id`. See §4.1 of the paper for the
   migration.
+- **Breaking:** `ActiveChallenge` digests are HMAC-SHA256 under an
+  on-device audit key (`hmac-sha256:<hex>`), with a new required
+  `digest_key_id`. Plain SHA-256 digests of short responses ("yes",
+  "the insurance") could be recovered by hashing likely answers. Both
+  digests also cover `challenge_id` and a role label, so a digest cannot
+  be copied into another record or swapped between challenge and
+  response. The
+  AG-UI binding takes `audit_key` and rejects a resume whose challenge
+  text no longer matches its digest.
 - **Breaking:** `AugmentationProfile` requires `version`, and
   `AugmentationAction` requires `profile_version`. Audits judge each
   action against the profile version it was taken under.

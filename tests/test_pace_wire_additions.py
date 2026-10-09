@@ -79,18 +79,85 @@ def test_service_ref_requires_at_least_one_modality_and_language():
 # --------------------------------------------------------------------------
 
 
+KEY = bytes(range(32))
+KEY_ID = "audit-key-1"
+
+
 def test_active_challenge_canonical_hash_is_deterministic():
-    h1 = ActiveChallenge.hash_canonical_text("Hello, principal.")
-    h2 = ActiveChallenge.hash_canonical_text("Hello, principal.   ")  # trailing ws
+    h1 = ActiveChallenge.challenge_digest("ch-1", "Hello, principal.", KEY)
+    h2 = ActiveChallenge.challenge_digest("ch-1", "Hello, principal.   ", KEY)
     assert h1 == h2  # canonical strips trailing whitespace
-    assert h1.startswith("sha256:")
+    assert h1.startswith("hmac-sha256:")
+
+
+def test_active_challenge_digest_depends_on_key():
+    other = bytes(range(1, 33))
+    assert ActiveChallenge.response_digest(
+        "ch-1", "yes", KEY
+    ) != ActiveChallenge.response_digest("ch-1", "yes", other)
+
+
+def test_short_response_not_recoverable_without_key():
+    """A plain SHA-256 dictionary of likely answers does not match."""
+    import hashlib
+
+    digest = ActiveChallenge.response_digest("ch-1", "yes", KEY).split(":", 1)[1]
+    guesses = {hashlib.sha256(w.encode()).hexdigest() for w in ("yes", "no", "")}
+    assert digest not in guesses
+
+
+def test_same_answer_differs_across_challenges():
+    """A "yes" from one record cannot be copied into another."""
+    assert ActiveChallenge.response_digest(
+        "ch-1", "yes", KEY
+    ) != ActiveChallenge.response_digest("ch-2", "yes", KEY)
+
+
+def test_challenge_and_response_digests_are_separated():
+    assert ActiveChallenge.challenge_digest(
+        "ch-1", "yes", KEY
+    ) != ActiveChallenge.response_digest("ch-1", "yes", KEY)
+
+
+def test_active_challenge_digest_requires_32_byte_key():
+    with pytest.raises(ValueError, match="32 bytes"):
+        ActiveChallenge.response_digest("ch-1", "yes", b"short")
+
+
+def test_active_challenge_digest_rejects_nul_in_challenge_id():
+    with pytest.raises(ValueError, match="NUL"):
+        ActiveChallenge.response_digest("ch\x001", "yes", KEY)
+
+
+def test_active_challenge_matches_is_exact():
+    d = ActiveChallenge.response_digest("ch-1", "forty two dollars", KEY)
+    assert ActiveChallenge.matches_response("ch-1", " forty two dollars ", KEY, d)
+    assert not ActiveChallenge.matches_response("ch-1", "forty three dollars", KEY, d)
+    assert not ActiveChallenge.matches_response("ch-2", "forty two dollars", KEY, d)
+    assert not ActiveChallenge.matches_challenge("ch-1", "forty two dollars", KEY, d)
+
+
+def test_active_challenge_rejects_unkeyed_sha256_digests():
+    with pytest.raises(ValueError):
+        ActiveChallenge(
+            challenge_id="ch-1",
+            digest_key_id=KEY_ID,
+            challenge_type=ChallengeType.CONFIRMATION_REPEAT,
+            challenge_hash="sha256:" + "0" * 64,
+            response_hash="sha256:" + "0" * 64,
+            response_window_ms=10000,
+            response_received_ms=2200,
+            classified_as=ResponseClassification.COMPREHENDED,
+            posed_at="2026-04-30T10:00:00Z",
+        )
 
 
 def test_active_challenge_round_trip():
-    h = ActiveChallenge.hash_canonical_text("repeat back the amount")
-    rh = ActiveChallenge.hash_canonical_text("forty two dollars")
+    h = ActiveChallenge.response_digest("ch-1", "repeat back the amount", KEY)
+    rh = ActiveChallenge.response_digest("ch-1", "forty two dollars", KEY)
     challenge = ActiveChallenge(
         challenge_id="ch-1",
+        digest_key_id=KEY_ID,
         challenge_type=ChallengeType.CONFIRMATION_REPEAT,
         challenge_hash=h,
         response_hash=rh,
@@ -105,11 +172,12 @@ def test_active_challenge_round_trip():
 
 
 def test_active_challenge_non_responsive_requires_no_received_ms():
-    h = ActiveChallenge.hash_canonical_text("x")
-    rh = ActiveChallenge.hash_canonical_text("")
+    h = ActiveChallenge.response_digest("ch-1", "x", KEY)
+    rh = ActiveChallenge.response_digest("ch-1", "", KEY)
     with pytest.raises(ValueError, match="response_received_ms"):
         ActiveChallenge(
             challenge_id="ch-1",
+            digest_key_id=KEY_ID,
             challenge_type=ChallengeType.COMPREHENSION_QUESTION,
             challenge_hash=h,
             response_hash=rh,
@@ -121,10 +189,11 @@ def test_active_challenge_non_responsive_requires_no_received_ms():
 
 
 def test_active_challenge_responded_requires_received_ms():
-    h = ActiveChallenge.hash_canonical_text("x")
+    h = ActiveChallenge.response_digest("ch-1", "x", KEY)
     with pytest.raises(ValueError, match="response_received_ms"):
         ActiveChallenge(
             challenge_id="ch-1",
+            digest_key_id=KEY_ID,
             challenge_type=ChallengeType.COMPREHENSION_QUESTION,
             challenge_hash=h,
             response_hash=h,
@@ -136,10 +205,11 @@ def test_active_challenge_responded_requires_received_ms():
 
 
 def test_active_challenge_response_cannot_exceed_window():
-    h = ActiveChallenge.hash_canonical_text("x")
+    h = ActiveChallenge.response_digest("ch-1", "x", KEY)
     with pytest.raises(ValueError, match="response_window_ms"):
         ActiveChallenge(
             challenge_id="ch-1",
+            digest_key_id=KEY_ID,
             challenge_type=ChallengeType.COMPREHENSION_QUESTION,
             challenge_hash=h,
             response_hash=h,
