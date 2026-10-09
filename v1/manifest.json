@@ -4,7 +4,7 @@
     "uri": "https://ravikiran438.github.io/sauvidya-pace/v1",
     "name": "Sauvidya PACE Framework",
     "description": "Principal accessibility / capacity / engagement layer for A2A orchestrators.",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "publisher": "Ravi Kiran Kadaboina",
     "human_readable_spec": "https://doi.org/10.5281/zenodo.19633138"
   },
@@ -80,10 +80,463 @@
     "title": "AccessibilityServiceRef",
     "type": "object"
   },
-  "wire_artefacts": [],
+  "wire_artefacts": [
+    {
+      "name": "PrincipalCapabilityProfile",
+      "description": "Read-only PCP copy the principal's PACE orchestrator delivers to an agent before it may interact (PCP-1, IM-1).",
+      "endpoint_field": "pcp_endpoint",
+      "method": "POST",
+      "schema": {
+        "$defs": {
+          "CapabilityLevel": {
+            "enum": [
+              "full",
+              "low",
+              "minimal",
+              "none"
+            ],
+            "title": "CapabilityLevel",
+            "type": "string"
+          },
+          "CognitiveLevel": {
+            "enum": [
+              "full",
+              "mild_decline",
+              "moderate_decline",
+              "severe_decline"
+            ],
+            "title": "CognitiveLevel",
+            "type": "string"
+          },
+          "DecisionCapacity": {
+            "enum": [
+              "stable",
+              "fluctuating",
+              "limited",
+              "guardian_required"
+            ],
+            "title": "DecisionCapacity",
+            "type": "string"
+          },
+          "LanguageFluency": {
+            "properties": {
+              "code": {
+                "description": "ISO 639-1 language code (e.g., 'te' for Telugu)",
+                "title": "Code",
+                "type": "string"
+              },
+              "fluency": {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "title": "Fluency",
+                "type": "number"
+              }
+            },
+            "required": [
+              "code",
+              "fluency"
+            ],
+            "title": "LanguageFluency",
+            "type": "object"
+          }
+        },
+        "description": "Declares a principal's interaction capabilities.\n\nThis is the communication contract between the principal (or guardian)\nand every agent in the network.",
+        "properties": {
+          "principal_id": {
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "declared_at": {
+            "description": "ISO 8601 timestamp",
+            "title": "Declared At",
+            "type": "string"
+          },
+          "declared_by": {
+            "description": "'principal' or 'guardian:<guardian_id>'",
+            "title": "Declared By",
+            "type": "string"
+          },
+          "vision": {
+            "$ref": "#/$defs/CapabilityLevel",
+            "default": "full"
+          },
+          "hearing": {
+            "$ref": "#/$defs/CapabilityLevel",
+            "default": "full"
+          },
+          "motor": {
+            "$ref": "#/$defs/CapabilityLevel",
+            "default": "full"
+          },
+          "cognitive": {
+            "$ref": "#/$defs/CognitiveLevel",
+            "default": "full"
+          },
+          "language": {
+            "description": "At least one language with fluency score",
+            "items": {
+              "$ref": "#/$defs/LanguageFluency"
+            },
+            "minItems": 1,
+            "title": "Language",
+            "type": "array"
+          },
+          "literacy": {
+            "$ref": "#/$defs/CapabilityLevel",
+            "default": "full"
+          },
+          "tech_fluency": {
+            "$ref": "#/$defs/CapabilityLevel",
+            "default": "full"
+          },
+          "decision_capacity": {
+            "$ref": "#/$defs/DecisionCapacity",
+            "default": "stable"
+          },
+          "adaptations_required": {
+            "description": "Derived adaptations: voice_primary, language:te, max_options:2, etc.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Adaptations Required",
+            "type": "array"
+          },
+          "correction_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Version ID this corrects, if any (PCP-2 forward correction)",
+            "title": "Correction Of"
+          }
+        },
+        "required": [
+          "principal_id",
+          "version",
+          "declared_at",
+          "declared_by",
+          "language"
+        ],
+        "title": "PrincipalCapabilityProfile",
+        "type": "object"
+      }
+    },
+    {
+      "name": "AdaptiveInteractionContract",
+      "description": "The orchestrator's currently bound AIC for a principal; the URL carries a {principal_id} placeholder.",
+      "endpoint_field": "aic_endpoint",
+      "method": "GET",
+      "schema": {
+        "$defs": {
+          "InteractionRules": {
+            "properties": {
+              "response_timeout_seconds": {
+                "default": 300,
+                "exclusiveMinimum": 0,
+                "title": "Response Timeout Seconds",
+                "type": "integer"
+              },
+              "max_options_per_turn": {
+                "default": 2,
+                "exclusiveMinimum": 0,
+                "title": "Max Options Per Turn",
+                "type": "integer"
+              },
+              "confirmation_style": {
+                "default": "voice_repeat_back",
+                "title": "Confirmation Style",
+                "type": "string"
+              },
+              "language": {
+                "description": "ISO 639-1 code",
+                "title": "Language",
+                "type": "string"
+              },
+              "speech_rate": {
+                "default": 0.7,
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "title": "Speech Rate",
+                "type": "number"
+              },
+              "information_density": {
+                "default": "low",
+                "title": "Information Density",
+                "type": "string"
+              },
+              "memory_aid": {
+                "default": true,
+                "title": "Memory Aid",
+                "type": "boolean"
+              },
+              "guardian_cc": {
+                "default": "always",
+                "description": "always | threshold | never",
+                "title": "Guardian Cc",
+                "type": "string"
+              },
+              "valid_time_windows": {
+                "items": {
+                  "$ref": "#/$defs/TimeWindow"
+                },
+                "title": "Valid Time Windows",
+                "type": "array"
+              },
+              "sundown_block": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TimeWindow"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "max_interactions_per_day": {
+                "default": 3,
+                "exclusiveMinimum": 0,
+                "title": "Max Interactions Per Day",
+                "type": "integer"
+              },
+              "escalation_on_confusion": {
+                "default": true,
+                "title": "Escalation On Confusion",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "language"
+            ],
+            "title": "InteractionRules",
+            "type": "object"
+          },
+          "TimeWindow": {
+            "properties": {
+              "start": {
+                "description": "HH:MM format",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "description": "HH:MM format",
+                "title": "End",
+                "type": "string"
+              }
+            },
+            "required": [
+              "start",
+              "end"
+            ],
+            "title": "TimeWindow",
+            "type": "object"
+          },
+          "ViolationPolicy": {
+            "properties": {
+              "on_time_window_violation": {
+                "default": "block_agent + notify_guardian",
+                "title": "On Time Window Violation",
+                "type": "string"
+              },
+              "on_option_overload": {
+                "default": "reject_interaction + log",
+                "title": "On Option Overload",
+                "type": "string"
+              },
+              "on_language_mismatch": {
+                "default": "reject_interaction + escalate",
+                "title": "On Language Mismatch",
+                "type": "string"
+              },
+              "on_capacity_check_skip": {
+                "default": "block_agent + notify_guardian + audit_flag",
+                "title": "On Capacity Check Skip",
+                "type": "string"
+              }
+            },
+            "title": "ViolationPolicy",
+            "type": "object"
+          }
+        },
+        "description": "Binding agreement governing how all agents interact with this principal.",
+        "properties": {
+          "principal_id": {
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "pcp_version": {
+            "title": "Pcp Version",
+            "type": "string"
+          },
+          "guardian_approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Guardian Approved By"
+          },
+          "interaction_rules": {
+            "$ref": "#/$defs/InteractionRules"
+          },
+          "violation_policy": {
+            "$ref": "#/$defs/ViolationPolicy"
+          }
+        },
+        "required": [
+          "principal_id",
+          "pcp_version",
+          "interaction_rules"
+        ],
+        "title": "AdaptiveInteractionContract",
+        "type": "object"
+      }
+    },
+    {
+      "name": "PACEViolationNotice",
+      "description": "Signed one-hop broadcast of an AIC violation to peer orchestrators (V-1, V-2, V-3).",
+      "endpoint_field": "violation_notice_endpoint",
+      "method": "POST",
+      "schema": {
+        "$defs": {
+          "EnforcementAction": {
+            "description": "The action the issuing orchestrator applied locally and is asking\npeers to mirror.\n\nNames align with the strings used in ``ViolationPolicy`` defaults\n(``\"block_agent + notify_guardian\"`` etc.) but split into structured\nenum values so peers can apply enforcement without parsing.",
+            "enum": [
+              "block_agent",
+              "reject_interaction",
+              "notify_guardian",
+              "audit_flag",
+              "escalate"
+            ],
+            "title": "EnforcementAction",
+            "type": "string"
+          },
+          "ViolationType": {
+            "description": "Which AIC clause was breached. Mirrors ViolationPolicy keys.",
+            "enum": [
+              "time_window",
+              "option_overload",
+              "language_mismatch",
+              "capacity_check_skip"
+            ],
+            "title": "ViolationType",
+            "type": "string"
+          }
+        },
+        "description": "One-hop broadcast that an AIC violation has occurred.\n\nIssued by the detecting orchestrator; consumed by peer\norchestrators bound by the same AIC for the same principal. Per\nCCC-2, the notice MUST NOT carry principal speech, response text,\nor any capacity_signal value; only structured facts and digests.",
+        "properties": {
+          "notice_id": {
+            "description": "UUID v4",
+            "title": "Notice Id",
+            "type": "string"
+          },
+          "principal_id": {
+            "description": "The principal under whose AIC this violation occurred. Receivers use this to scope the block to peers of this principal only (V-3).",
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "aic_version": {
+            "description": "AdaptiveInteractionContract version that was breached. Receivers MUST be on the same version (V-1) before applying enforcement; older/newer AICs imply a different rule set.",
+            "title": "Aic Version",
+            "type": "string"
+          },
+          "offending_agent_id": {
+            "description": "DID or HTTPS URL of the agent that breached the AIC. The block is scoped to this agent.",
+            "title": "Offending Agent Id",
+            "type": "string"
+          },
+          "violation_type": {
+            "$ref": "#/$defs/ViolationType"
+          },
+          "detected_at": {
+            "description": "ISO 8601 UTC",
+            "title": "Detected At",
+            "type": "string"
+          },
+          "detected_by": {
+            "description": "Identifier (DID or URL) of the issuing orchestrator. Pairs with issuer_signature for authentication.",
+            "title": "Detected By",
+            "type": "string"
+          },
+          "enforcement_actions": {
+            "description": "The actions the issuer applied locally; receivers SHOULD mirror those that are within their authority.",
+            "items": {
+              "$ref": "#/$defs/EnforcementAction"
+            },
+            "minItems": 1,
+            "title": "Enforcement Actions",
+            "type": "array"
+          },
+          "block_duration_seconds": {
+            "description": "How long the block applies, measured from detected_at. Receivers MUST honour at least this duration.",
+            "exclusiveMinimum": 0,
+            "title": "Block Duration Seconds",
+            "type": "integer"
+          },
+          "evidence_hash": {
+            "description": "SHA-256 over a canonical, principal-data-free description of the violation (timestamps, AIC clause id, agent id, violation_type). Format: ``sha256:<hex>``. Lets auditors tie the notice to a stored evidence record without exposing principal content on the wire.",
+            "title": "Evidence Hash",
+            "type": "string"
+          },
+          "issuer_signature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "JWS (compact serialization) over the canonical JSON of this notice (excluding this field), signed by the issuing orchestrator's key. RECOMMENDED.",
+            "title": "Issuer Signature"
+          }
+        },
+        "required": [
+          "notice_id",
+          "principal_id",
+          "aic_version",
+          "offending_agent_id",
+          "violation_type",
+          "detected_at",
+          "detected_by",
+          "enforcement_actions",
+          "block_duration_seconds",
+          "evidence_hash"
+        ],
+        "title": "PACEViolationNotice",
+        "type": "object"
+      }
+    }
+  ],
   "invariants": [
-    "IM-1: InteractionModality MUST be computed from PCP before any interaction.",
-    "CCC-2: capacity_signal MUST NOT be transmitted to remote agents.",
-    "AIC-1: no interaction outside valid_time_windows unless emergency."
+    "PCP-1: the PrincipalCapabilityProfile is stored on-device; no remote agent may write or modify it.",
+    "PCP-2: PCP versions are immutable and append-only; corrections are new versions.",
+    "PCP-3: a guardian declaring a PCP MUST be verifiably identified.",
+    "IM-1: an InteractionModality MUST be computed from the PCP before any interaction; an agent that cannot satisfy adaptations_required MUST escalate instead.",
+    "IM-2: an agent MUST NOT fall back to a language the PCP does not declare; it uses a capable sub-agent or escalates.",
+    "CCC-1: a ConsentCapacityCheck MUST precede any consent record for principals whose decision_capacity is fluctuating, limited, or guardian_required.",
+    "CCC-2: ConsentCapacityCheck results MUST NOT be transmitted to any remote agent.",
+    "CCC-3: a ConsentCapacityCheck is not a clinical assessment.",
+    "AIC-1: no interaction outside valid_time_windows unless classified as emergency.",
+    "AIC-2: no more than max_options_per_turn options in a single turn.",
+    "AIC-3: after a response timeout, no immediate retry; escalate after non_response_policy.escalate_after non-responses.",
+    "AIC-4: contract violations trigger the declared violation_policy; cross-orchestrator blocks travel as signed PACEViolationNotice records.",
+    "V-1: a receiver bound by the same aic_version for the principal MUST block offending_agent_id for at least block_duration_seconds.",
+    "V-2: receivers MUST NOT forward a PACEViolationNotice (one-hop broadcast).",
+    "V-3: receivers without an AIC for the principal log the notice but MUST NOT apply the block."
   ]
 }

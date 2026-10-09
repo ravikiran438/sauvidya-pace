@@ -108,7 +108,9 @@ AgentCard payload a PACE-aware agent declares under
 
 The PACE AgentCard descriptor is `AccessibilityServiceRef` (see
 [`src/pace/types/accessibility_service_ref.py`](src/pace/types/accessibility_service_ref.py));
-the manifest is auto-generated from it. The augmentation-profile
+the manifest and `SPEC.md` are generated from it with
+`uv run python -m pace.manifest --write`, and a test fails if the
+committed files drift. The augmentation-profile
 sub-extension follows the same layout at
 [`extensions/augmentation-profile/v1/manifest.json`](extensions/augmentation-profile/v1/manifest.json) /
 [`SPEC.md`](extensions/augmentation-profile/v1/SPEC.md).

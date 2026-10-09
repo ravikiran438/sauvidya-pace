@@ -45,7 +45,7 @@ from pace.types import (
 
 def _ref(**overrides) -> AccessibilityServiceRef:
     base = dict(
-        version="1.0.0",
+        version="0.1.0",
         pcp_endpoint="https://orch.example.com/pace/pcp",
         aic_endpoint="https://orch.example.com/pace/aic/{principal_id}",
         violation_notice_endpoint="https://orch.example.com/pace/violations",

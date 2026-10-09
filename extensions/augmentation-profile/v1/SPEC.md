@@ -1,9 +1,9 @@
 # PACE Augmentation-Profile Extension — Wire Specification
 
-> Generated from `v1/manifest.json`. Re-render after the manifest changes; do not hand-edit.
+> Generated from `extensions/augmentation-profile/v1/manifest.json` by `uv run python -m pace.manifest --write`. Do not hand-edit.
 
 - **Extension URI:** `https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1`
-- **Protocol version:** 1.0.0
+- **Protocol version:** 0.1.0 (draft)
 - **Manifest envelope version:** 1.0.0
 - **Publisher:** Ravi Kiran Kadaboina
 
@@ -15,10 +15,8 @@ This extension declares itself by URI presence and does not constrain the AgentC
 
 ## Invariants
 
-- AP-1: every AugmentationAction MUST be reversible by an AxisRevertedEvent within the declared window.
-- AP-2: emergency triggers bypass profile review only for actions explicitly marked emergency-allowed.
-- AP-3: principal-skill-maintenance MUST be preserved across augmentation cycles (no skill atrophy).
-
----
-
-_Drift between this `SPEC.md` and the protocol's pydantic models indicates the manifest needs regenerating. CI may compare a freshly-rendered version against the committed one._
+- AUG-1 Reversibility: every augmentation can be reverted; after an AxisRevertedEvent no compensate or amplify action may target that axis.
+- AUG-2 Audit Decomposition: every AugmentationAction records its mediation.
+- AUG-3 Identity Preservation: actions that alter the principal's voice or written style require identity_consent.
+- AUG-4 Skill Maintenance: axes declared preserve are never replaced by agent action.
+- AUG-5 Emergency Boundary: an emergency trigger forces a human handoff; no compensate or amplify action until a human acknowledges it.

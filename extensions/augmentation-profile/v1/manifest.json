@@ -4,7 +4,7 @@
     "uri": "https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1",
     "name": "PACE Augmentation-Profile Extension",
     "description": "Active augmentation actions for principals, with reversibility and identity-preservation guarantees.",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "publisher": "Ravi Kiran Kadaboina"
   },
   "agent_card_payload_schema": {
@@ -15,8 +15,10 @@
   },
   "wire_artefacts": [],
   "invariants": [
-    "AP-1: every AugmentationAction MUST be reversible by an AxisRevertedEvent within the declared window.",
-    "AP-2: emergency triggers bypass profile review only for actions explicitly marked emergency-allowed.",
-    "AP-3: principal-skill-maintenance MUST be preserved across augmentation cycles (no skill atrophy)."
+    "AUG-1 Reversibility: every augmentation can be reverted; after an AxisRevertedEvent no compensate or amplify action may target that axis.",
+    "AUG-2 Audit Decomposition: every AugmentationAction records its mediation.",
+    "AUG-3 Identity Preservation: actions that alter the principal's voice or written style require identity_consent.",
+    "AUG-4 Skill Maintenance: axes declared preserve are never replaced by agent action.",
+    "AUG-5 Emergency Boundary: an emergency trigger forces a human handoff; no compensate or amplify action until a human acknowledges it."
   ]
 }

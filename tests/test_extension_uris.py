@@ -17,7 +17,7 @@ def test_pace_core_extension_uri():
 def test_augmentation_profile_extension_uri():
     from pace.extensions.augmentation_profile import EXTENSION_URI
     assert EXTENSION_URI == (
-        "https://github.com/ravikiran438/sauvidya-pace/"
+        "https://ravikiran438.github.io/sauvidya-pace/"
         "extensions/augmentation-profile/v1"
     )
 
