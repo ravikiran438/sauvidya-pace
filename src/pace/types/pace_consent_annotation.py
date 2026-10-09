@@ -68,6 +68,17 @@ class PACEConsentAnnotation(BaseModel):
         ),
     )
 
+    relayed_by: Optional[str] = Field(
+        default=None,
+        pattern=r"^guardian:.+$",
+        description=(
+            "Set to 'guardian:<id>' when no agent could reach the principal "
+            "in an acceptable language and a guardian relayed the question "
+            "(fallback_chain guardian_relay). Relay carries the question, "
+            "not the consent: see CCC-4."
+        ),
+    )
+
     ccc_performed: bool = Field(
         ...,
         description=(

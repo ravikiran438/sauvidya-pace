@@ -51,10 +51,11 @@ Delivered via `POST` to the URL in `violation_notice_endpoint`. Body schema: the
 - PCP-2: PCP versions are immutable and append-only; corrections are new versions.
 - PCP-3: a guardian declaring a PCP MUST be verifiably identified.
 - IM-1: an InteractionModality MUST be computed from the PCP before any interaction; an agent that cannot satisfy adaptations_required MUST escalate instead.
-- IM-2: an agent MUST NOT fall back to a language the PCP does not declare; it uses a capable sub-agent or escalates.
+- IM-2: an agent MUST use a language the PCP pins (adaptations_required language:<code>) or, without a pin, one listed at or above the AIC's min_language_fluency; otherwise it routes to a capable sub-agent or escalates, and never falls back to another language. An AIC MUST NOT bind a language the PCP rules out.
 - CCC-1: a ConsentCapacityCheck MUST precede any consent record for principals whose decision_capacity is fluctuating, limited, or guardian_required.
 - CCC-2: ConsentCapacityCheck results MUST NOT be transmitted to any remote agent.
 - CCC-3: a ConsentCapacityCheck is not a clinical assessment.
+- CCC-4: relay carries the question, not the consent: consent reached through a guardian relay requires a ConsentCapacityCheck of the principal that is not guardian_confirmed, unless decision_capacity is guardian_required.
 - AIC-1: no interaction outside valid_time_windows unless classified as emergency.
 - AIC-2: no more than max_options_per_turn options in a single turn.
 - AIC-3: after a response timeout, no immediate retry; escalate after non_response_policy.escalate_after non-responses.

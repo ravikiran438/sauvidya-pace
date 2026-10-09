@@ -23,6 +23,8 @@ from pace.mcp_server.tools import (
     handle_validate_identity_preservation,
     handle_validate_im_precondition,
     handle_validate_language_match,
+    handle_validate_contract_language,
+    handle_validate_relay_consent,
     handle_validate_option_count,
     handle_validate_principal_capability_profile,
     handle_validate_reversibility,
@@ -555,3 +557,52 @@ def test_check_step_up_nudge_reports_due_after_time_limit():
 def test_check_step_up_nudge_rejects_bad_timestamp():
     with pytest.raises(ToolInvocationError, match="ISO 8601"):
         handle_check_step_up_nudge({"step_up": _step_up_payload(), "now": "soon"})
+
+
+def _lakshmi_pcp() -> dict:
+    return {
+        "principal_id": "p1",
+        "version": "v1",
+        "declared_at": "2026-10-01T10:00:00+05:30",
+        "declared_by": "guardian:g1",
+        "language": [{"code": "te", "fluency": 1.0}, {"code": "en", "fluency": 0.3}],
+        "decision_capacity": "fluctuating",
+        "adaptations_required": ["language:te"],
+    }
+
+
+def test_language_match_rejects_english_for_pinned_telugu():
+    modality = {
+        "agent_id": "a1", "principal_id": "p1", "pcp_version": "v1",
+        "modality_plan": {"primary_channel": "voice", "language": "en"},
+    }
+    result = json.loads(
+        handle_validate_language_match({"modality": modality, "pcp": _lakshmi_pcp()})
+    )
+    assert result["ok"] is False
+    assert "language:te" in result["error"]
+
+
+def test_contract_language_rejects_english_contract():
+    contract = {
+        "principal_id": "p1", "pcp_version": "v1",
+        "interaction_rules": {"language": "en"},
+    }
+    result = json.loads(
+        handle_validate_contract_language({"contract": contract, "pcp": _lakshmi_pcp()})
+    )
+    assert result["ok"] is False and "AIC" in result["error"]
+
+
+def test_relay_consent_requires_principal_ccc():
+    annotation = {
+        "annotation_id": "ann-1", "consent_record_id": "cr-1",
+        "principal_id": "p1", "pcp_version": "v1",
+        "relayed_by": "guardian:g1", "ccc_performed": False,
+        "interaction_modality": {"primary_channel": "voice", "language": "te"},
+        "annotated_at": "2026-10-09T10:00:00Z",
+    }
+    result = json.loads(
+        handle_validate_relay_consent({"pcp": _lakshmi_pcp(), "annotation": annotation})
+    )
+    assert result["ok"] is False and "CCC-4" in result["error"]

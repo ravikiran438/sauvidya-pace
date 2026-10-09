@@ -37,6 +37,17 @@ class InteractionRules(BaseModel):
     max_options_per_turn: int = Field(default=2, gt=0)
     confirmation_style: str = Field(default="voice_repeat_back")
     language: str = Field(..., description="ISO 639-1 code")
+    min_language_fluency: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "IM-2 floor: absent a language pin in the PCP's "
+            "adaptations_required, an agent may only use a language the "
+            "PCP lists at or above this fluency. Guardian-configurable "
+            "reference default, not a clinical cutoff."
+        ),
+    )
     speech_rate: float = Field(default=0.7, gt=0.0, le=1.0)
     information_density: str = Field(default="low")
     memory_aid: bool = Field(default=True)

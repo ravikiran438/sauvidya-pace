@@ -37,6 +37,16 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   notices between two orchestrators (8,249,080 distinct states).
 - `AugmentationProfile-Liveness.cfg`: checks that an expired step-up
   always leads to a nudge or to the step-up ending.
+- `InteractionRules.min_language_fluency` (default 0.7, guardian
+  configurable) and `acceptable_languages()`, which implement the IM-2
+  language rule.
+- `validate_contract_language`: an AIC may not bind every agent to a
+  language the PCP rules out. MCP tool `validate_contract_language`.
+- CCC-4, relay carries the question, not the consent:
+  `PACEConsentAnnotation.relayed_by` records a guardian relay, and
+  `validate_relay_consent` requires a capacity check of the principal
+  that is not `guardian_confirmed`, unless `decision_capacity` is
+  `guardian_required`. MCP tool `validate_relay_consent`.
 
 ### Changed
 
@@ -67,6 +77,12 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
 
 ### Fixed
 
+- IM-2 ignored fluency and language pins: `validate_language_match`
+  accepted any language listed in the PCP, so the paper's own example (an
+  English call to a principal with English at 0.3 and `language:te`
+  required) passed. A pin now wins; otherwise the language must meet the
+  fluency floor. Errors name the next step: a sub-agent that speaks an
+  acceptable language, then the escalation target.
 - MCP server failed to start on fresh installs once MCP SDK 2.x removed
   the decorator API.
 - AUG-4 (Skill Maintenance) flagged a legal history: help given while an

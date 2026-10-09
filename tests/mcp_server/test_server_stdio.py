@@ -48,6 +48,8 @@ async def test_server_lists_tools_over_stdio():
         "validate_principal_capability_profile",
         "validate_im_precondition",
         "validate_language_match",
+        "validate_contract_language",
+        "validate_relay_consent",
         "validate_ccc_gate",
         "validate_ccc_privacy",
         "validate_time_window",

@@ -45,13 +45,16 @@ from pace.validators import (
     CCCGateError,
     CCCPrivacyError,
     LanguageMismatchError,
+    RelayConsentError,
     ModalityPreconditionError,
     OptionOverloadError,
     TimeWindowViolationError,
     validate_ccc_gate,
     validate_ccc_privacy,
+    validate_contract_language,
     validate_im_precondition,
     validate_language_match,
+    validate_relay_consent,
     validate_option_count,
     validate_time_window,
 )
@@ -143,16 +146,53 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
     },
     "validate_language_match": {
         "description": (
-            "Verify that an InteractionModality's declared language is "
-            "one the principal is fluent in (per the PCP)."
+            "IM-2: verify that an InteractionModality's language is one the "
+            "principal can follow. A PCP pin (adaptations_required "
+            "'language:<code>') wins; otherwise the language must be listed "
+            "at or above the contract's min_language_fluency (0.7 without a "
+            "contract). On failure the error names the next step: a "
+            "sub-agent that speaks an acceptable language, then the "
+            "escalation target."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "modality": {"type": "object"},
                 "pcp": {"type": "object"},
+                "contract": {"type": ["object", "null"]},
             },
             "required": ["modality", "pcp"],
+        },
+    },
+    "validate_contract_language": {
+        "description": (
+            "IM-2 applied to the AdaptiveInteractionContract: reject a "
+            "contract that binds every agent to a language the PCP rules out."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "contract": {"type": "object"},
+                "pcp": {"type": "object"},
+            },
+            "required": ["contract", "pcp"],
+        },
+    },
+    "validate_relay_consent": {
+        "description": (
+            "CCC-4: relay carries the question, not the consent. A "
+            "PACEConsentAnnotation with relayed_by set must carry a "
+            "ConsentCapacityCheck of the principal that is not "
+            "guardian_confirmed, unless the PCP's decision_capacity is "
+            "guardian_required."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "pcp": {"type": "object"},
+                "annotation": {"type": "object"},
+            },
+            "required": ["pcp", "annotation"],
         },
     },
     "validate_ccc_gate": {
@@ -467,11 +507,38 @@ def handle_validate_language_match(arguments: dict[str, Any]) -> str:
         InteractionModality, arguments.get("modality"), "modality"
     )
     pcp = _parse(PrincipalCapabilityProfile, arguments.get("pcp"), "pcp")
+    contract = _parse_optional(
+        AdaptiveInteractionContract, arguments.get("contract"), "contract"
+    )
     try:
-        validate_language_match(modality, pcp)
+        validate_language_match(modality, pcp, contract)
     except LanguageMismatchError as exc:
         return _fail(str(exc))
     return _ok({"modality": "language-match"})
+
+
+def handle_validate_contract_language(arguments: dict[str, Any]) -> str:
+    contract = _parse(
+        AdaptiveInteractionContract, arguments.get("contract"), "contract"
+    )
+    pcp = _parse(PrincipalCapabilityProfile, arguments.get("pcp"), "pcp")
+    try:
+        validate_contract_language(contract, pcp)
+    except LanguageMismatchError as exc:
+        return _fail(str(exc))
+    return _ok({"contract": "language-acceptable"})
+
+
+def handle_validate_relay_consent(arguments: dict[str, Any]) -> str:
+    pcp = _parse(PrincipalCapabilityProfile, arguments.get("pcp"), "pcp")
+    annotation = _parse(
+        PACEConsentAnnotation, arguments.get("annotation"), "annotation"
+    )
+    try:
+        validate_relay_consent(pcp, annotation)
+    except RelayConsentError as exc:
+        return _fail(str(exc))
+    return _ok({"relay_consent": "honored"})
 
 
 def handle_validate_ccc_gate(arguments: dict[str, Any]) -> str:
@@ -741,6 +808,8 @@ HANDLERS: dict[str, Any] = {
     "validate_principal_capability_profile": handle_validate_principal_capability_profile,
     "validate_im_precondition": handle_validate_im_precondition,
     "validate_language_match": handle_validate_language_match,
+    "validate_contract_language": handle_validate_contract_language,
+    "validate_relay_consent": handle_validate_relay_consent,
     "validate_ccc_gate": handle_validate_ccc_gate,
     "validate_ccc_privacy": handle_validate_ccc_privacy,
     "validate_time_window": handle_validate_time_window,

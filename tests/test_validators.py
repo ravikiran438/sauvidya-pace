@@ -76,6 +76,131 @@ class TestLanguageMatch:
             validate_language_match(_modality(lang="en"), _pcp(lang="te"))
 
 
+def _lakshmi(pinned: bool = True, en: float = 0.3, hi: float | None = None):
+    """The paper's worked example: Telugu 1.0, English 0.3."""
+    languages = [
+        LanguageFluency(code="te", fluency=1.0),
+        LanguageFluency(code="en", fluency=en),
+    ]
+    if hi is not None:
+        languages.append(LanguageFluency(code="hi", fluency=hi))
+    return PrincipalCapabilityProfile(
+        principal_id="p1", version="v1",
+        declared_at="2026-10-01T10:00:00+05:30", declared_by="guardian:g1",
+        language=languages,
+        decision_capacity=DecisionCapacity.FLUCTUATING,
+        adaptations_required=["voice_primary", "language:te"] if pinned else [],
+    )
+
+
+class TestLanguageRule:
+    def test_paper_example_english_call_rejected(self):
+        with pytest.raises(LanguageMismatchError, match="pins language:te"):
+            validate_language_match(_modality(lang="en"), _lakshmi())
+
+    def test_pin_wins_over_fluency(self):
+        pcp = _lakshmi(pinned=True, en=0.9)
+        with pytest.raises(LanguageMismatchError, match="pins"):
+            validate_language_match(_modality(lang="en"), pcp)
+        validate_language_match(_modality(lang="te"), pcp)
+
+    def test_without_pin_low_fluency_rejected(self):
+        with pytest.raises(LanguageMismatchError, match="below the floor"):
+            validate_language_match(_modality(lang="en"), _lakshmi(pinned=False))
+
+    def test_without_pin_strong_second_language_allowed(self):
+        validate_language_match(
+            _modality(lang="hi"), _lakshmi(pinned=False, hi=0.9)
+        )
+
+    def test_floor_comes_from_contract(self):
+        pcp = _lakshmi(pinned=False, en=0.6)
+        with pytest.raises(LanguageMismatchError, match="below the floor of 0.70"):
+            validate_language_match(_modality(lang="en"), pcp)
+        lenient = AdaptiveInteractionContract(
+            principal_id="p1", pcp_version="v1",
+            interaction_rules=InteractionRules(language="te", min_language_fluency=0.5),
+        )
+        validate_language_match(_modality(lang="en"), pcp, lenient)
+
+    def test_error_names_next_rung(self):
+        modality = _modality(lang="en")
+        modality = modality.model_copy(update={"escalation_target": "guardian:g1"})
+        with pytest.raises(LanguageMismatchError) as err:
+            validate_language_match(modality, _lakshmi())
+        assert "sub-agent that speaks one of ['te']" in str(err.value)
+        assert "escalate to guardian:g1" in str(err.value)
+
+    def test_no_language_meets_floor(self):
+        pcp = PrincipalCapabilityProfile(
+            principal_id="p1", version="v1",
+            declared_at="2026-10-01T10:00:00Z", declared_by="principal",
+            language=[LanguageFluency(code="te", fluency=0.4)],
+        )
+        with pytest.raises(LanguageMismatchError, match="no language"):
+            validate_language_match(_modality(lang="te"), pcp)
+
+    def test_acceptable_languages(self):
+        assert acceptable_languages(_lakshmi()) == {"te"}
+        assert acceptable_languages(_lakshmi(pinned=False, hi=0.9)) == {"te", "hi"}
+
+    def test_contract_cannot_bind_ruled_out_language(self):
+        english = AdaptiveInteractionContract(
+            principal_id="p1", pcp_version="v1",
+            interaction_rules=InteractionRules(language="en"),
+        )
+        with pytest.raises(LanguageMismatchError, match="AIC"):
+            validate_contract_language(english, _lakshmi())
+        validate_contract_language(_contract(lang="te"), _lakshmi())
+
+
+# ─── CCC-4: Relay carries the question, not the consent ─────────────
+
+def _annotation(relayed_by=None, ccc_performed=True, method=AssessmentMethod.PASSIVE):
+    ccc = (
+        dict(
+            ccc_capacity_signal=0.8,
+            ccc_recommendation=CapacityRecommendation.PROCEED,
+            ccc_assessment_method=method,
+        )
+        if ccc_performed
+        else {}
+    )
+    return PACEConsentAnnotation(
+        annotation_id="ann-1", consent_record_id="cr-1",
+        principal_id="p1", pcp_version="v1",
+        relayed_by=relayed_by, ccc_performed=ccc_performed,
+        interaction_modality=ModalityPlan(primary_channel=PrimaryChannel.VOICE, language="te"),
+        annotated_at="2026-10-09T10:00:00Z", **ccc,
+    )
+
+
+class TestRelayConsent:
+    def test_direct_consent_unaffected(self):
+        validate_relay_consent(_pcp(), _annotation(relayed_by=None, ccc_performed=False))
+
+    def test_relay_with_principal_ccc_passes(self):
+        validate_relay_consent(_pcp(), _annotation(relayed_by="guardian:g1"))
+
+    def test_relay_without_ccc_rejected_even_when_stable(self):
+        pcp = _pcp(decision_capacity=DecisionCapacity.STABLE)
+        with pytest.raises(RelayConsentError, match="CCC-4"):
+            validate_relay_consent(pcp, _annotation(relayed_by="guardian:g1", ccc_performed=False))
+
+    def test_relaying_guardian_cannot_vouch_for_capacity(self):
+        ann = _annotation(relayed_by="guardian:g1", method=AssessmentMethod.GUARDIAN_CONFIRMED)
+        with pytest.raises(RelayConsentError, match="also confirmed capacity"):
+            validate_relay_consent(_pcp(), ann)
+
+    def test_guardian_required_principal_exempt(self):
+        pcp = _pcp(decision_capacity=DecisionCapacity.GUARDIAN_REQUIRED)
+        validate_relay_consent(pcp, _annotation(relayed_by="guardian:g1", ccc_performed=False))
+
+    def test_relayed_by_must_name_a_guardian(self):
+        with pytest.raises(ValueError):
+            _annotation(relayed_by="agent:a1")
+
+
 # ─── CCC-1: Capacity Gate ────────────────────────────────────────────
 
 class TestCCCGate:
