@@ -15,8 +15,8 @@
 """Tool registrations for the PACE MCP server.
 
 Each tool wraps a PACE invariant validator: six from PACE Core (the
-named accessibility invariants) and four from the augmentation_profile
-extension (AUG-1, AUG-3, AUG-4, AUG-5). Failures return
+named accessibility invariants) and six from the augmentation_profile
+extension (AUG-1, AUG-3, AUG-4, AUG-5, AUG-6). Failures return
 ``{"ok": false, "error": ...}`` with the validator's own diagnostic
 message.
 """
@@ -24,6 +24,7 @@ message.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from typing import Any
 
 from pydantic import ValidationError
@@ -55,7 +56,7 @@ from pace.validators import (
     validate_time_window,
 )
 
-# augmentation_profile extension (AUG-1, AUG-2, AUG-3, AUG-4, AUG-5).
+# augmentation_profile extension (AUG-1..AUG-6).
 # See extensions/augmentation_profile/.
 from pace.extensions.augmentation_profile import (
     AugmentationAction,
@@ -63,10 +64,13 @@ from pace.extensions.augmentation_profile import (
     AugmentationProfile,
     AxisRevertedEvent,
     HandoffEvent,
+    StepUpEvent,
     check_emergency_boundary,
     check_identity_preservation,
     check_reversibility,
     check_skill_maintenance,
+    check_step_up,
+    check_step_up_nudge,
 )
 
 
@@ -222,7 +226,7 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             "required": ["contract", "options_presented"],
         },
     },
-    # ── augmentation_profile extension (AUG-1, AUG-3, AUG-4, AUG-5) ────────
+    # ── augmentation_profile extension (AUG-1, AUG-3..AUG-6) ───────────────
     "validate_reversibility": {
         "description": (
             "augmentation_profile AUG-1: verify that an "
@@ -266,7 +270,8 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             "agent_compensated or agent_amplified action targets an "
             "axis declared 'preserve' on the principal's profile. "
             "Agents MAY scaffold via user_direct actions but MUST NOT "
-            "substitute on preserved capacities."
+            "substitute on preserved capacities. Pass the profile "
+            "version named by action.profile_version."
         ),
         "inputSchema": {
             "type": "object",
@@ -293,6 +298,42 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 },
             },
             "required": ["action", "handoff_events"],
+        },
+    },
+    "validate_step_up": {
+        "description": (
+            "augmentation_profile AUG-6: verify that no agent-mediated "
+            "action targets an axis the principal stepped up on in the "
+            "same task. The block holds until the task ends or the "
+            "principal ends the step-up; passing expires_at does not "
+            "lift it."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "object"},
+                "step_up_events": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                },
+            },
+            "required": ["action", "step_up_events"],
+        },
+    },
+    "check_step_up_nudge": {
+        "description": (
+            "augmentation_profile AUG-6: report whether a StepUpEvent is "
+            "past its time limit, still open and not yet nudged, in which "
+            "case the agent must nudge the principal instead of resuming "
+            "help. 'now' is an ISO 8601 timestamp."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "step_up": {"type": "object"},
+                "now": {"type": "string", "format": "date-time"},
+            },
+            "required": ["step_up", "now"],
         },
     },
     "validate_accessibility_service_ref": {
@@ -490,7 +531,7 @@ def handle_validate_option_count(arguments: dict[str, Any]) -> str:
     return _ok({"options_presented": count})
 
 
-# ── augmentation_profile extension handlers (AUG-1, AUG-3, AUG-4, AUG-5) ──
+# ── augmentation_profile extension handlers (AUG-1, AUG-3..AUG-6) ──
 
 
 def handle_validate_reversibility(arguments: dict[str, Any]) -> str:
@@ -549,6 +590,38 @@ def handle_validate_emergency_boundary(arguments: dict[str, Any]) -> str:
     except AugmentationError as exc:
         return _fail(str(exc))
     return _ok({"emergency_boundary": "honored"})
+
+
+def handle_validate_step_up(arguments: dict[str, Any]) -> str:
+    action = _parse(AugmentationAction, arguments.get("action"), "action")
+    events_raw = arguments.get("step_up_events")
+    if not isinstance(events_raw, list):
+        raise ToolInvocationError("step_up_events must be a list of objects")
+    events = [
+        _parse(StepUpEvent, e, f"step_up_events[{i}]")
+        for i, e in enumerate(events_raw)
+    ]
+    try:
+        check_step_up(action, events)
+    except AugmentationError as exc:
+        return _fail(str(exc))
+    return _ok({"step_up": "honored"})
+
+
+def handle_check_step_up_nudge(arguments: dict[str, Any]) -> str:
+    event = _parse(StepUpEvent, arguments.get("step_up"), "step_up")
+    raw_now = arguments.get("now")
+    if not isinstance(raw_now, str):
+        raise ToolInvocationError("now must be an ISO 8601 timestamp string")
+    try:
+        now = datetime.fromisoformat(raw_now)
+    except ValueError as exc:
+        raise ToolInvocationError(f"now is not ISO 8601: {exc}") from exc
+    try:
+        check_step_up_nudge(event, now)
+    except AugmentationError as exc:
+        return _ok({"nudge_due": True, "reason": str(exc)})
+    return _ok({"nudge_due": False})
 
 
 def handle_validate_accessibility_service_ref(arguments: dict[str, Any]) -> str:
@@ -677,6 +750,8 @@ HANDLERS: dict[str, Any] = {
     "validate_identity_preservation": handle_validate_identity_preservation,
     "validate_skill_maintenance": handle_validate_skill_maintenance,
     "validate_emergency_boundary": handle_validate_emergency_boundary,
+    "validate_step_up": handle_validate_step_up,
+    "check_step_up_nudge": handle_check_step_up_nudge,
     # AgentCard descriptor + sibling primitives
     "validate_accessibility_service_ref": handle_validate_accessibility_service_ref,
     "validate_active_challenge": handle_validate_active_challenge,

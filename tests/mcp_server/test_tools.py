@@ -27,6 +27,8 @@ from pace.mcp_server.tools import (
     handle_validate_principal_capability_profile,
     handle_validate_reversibility,
     handle_validate_skill_maintenance,
+    handle_validate_step_up,
+    handle_check_step_up_nudge,
     handle_validate_time_window,
     list_tool_names,
 )
@@ -346,6 +348,7 @@ def test_option_count_non_integer_raises():
 def _aug_profile_payload(identity_consent: bool = False) -> dict:
     return {
         "principal_id": "user-123",
+        "version": "v1",
         "pcp_version": "2026-04-25.v1",
         "axes": [
             {"name": "social_interpretation", "kind": "compensate"},
@@ -371,6 +374,8 @@ def _aug_action_payload(
         "principal_id": "user-123",
         "axis_name": axis_name,
         "mediation": mediation,
+        "profile_version": "v1",
+        "task_id": "task-1",
         "alters_identity": alters_identity,
         "description": "test action",
         "at": at,
@@ -496,3 +501,57 @@ def test_validate_emergency_boundary_passes_after_acknowledgement():
         )
     )
     assert result["ok"] is True
+
+
+def _step_up_payload(**overrides) -> dict:
+    payload = {
+        "principal_id": "user-123",
+        "axis_name": "social_interpretation",
+        "task_id": "task-1",
+        "granted_at": "2026-04-25T12:50:00+00:00",
+        "expires_at": "2026-04-25T13:20:00+00:00",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_validate_step_up_rejects_agent_action_in_stepped_up_task():
+    result = json.loads(
+        handle_validate_step_up(
+            {"action": _aug_action_payload(), "step_up_events": [_step_up_payload()]}
+        )
+    )
+    assert result["ok"] is False
+    assert "AUG-6" in result["error"]
+
+
+def test_validate_step_up_passes_in_other_task():
+    result = json.loads(
+        handle_validate_step_up(
+            {
+                "action": _aug_action_payload(),
+                "step_up_events": [_step_up_payload(task_id="task-2")],
+            }
+        )
+    )
+    assert result["ok"] is True
+
+
+def test_check_step_up_nudge_reports_due_after_time_limit():
+    due = json.loads(
+        handle_check_step_up_nudge(
+            {"step_up": _step_up_payload(), "now": "2026-04-25T13:30:00+00:00"}
+        )
+    )
+    assert due["ok"] is True and due["nudge_due"] is True
+    not_due = json.loads(
+        handle_check_step_up_nudge(
+            {"step_up": _step_up_payload(), "now": "2026-04-25T13:00:00+00:00"}
+        )
+    )
+    assert not_due["nudge_due"] is False
+
+
+def test_check_step_up_nudge_rejects_bad_timestamp():
+    with pytest.raises(ToolInvocationError, match="ISO 8601"):
+        handle_check_step_up_nudge({"step_up": _step_up_payload(), "now": "soon"})

@@ -18,5 +18,6 @@ This extension declares itself by URI presence and does not constrain the AgentC
 - AUG-1 Reversibility: every augmentation can be reverted; after an AxisRevertedEvent no compensate or amplify action may target that axis.
 - AUG-2 Audit Decomposition: every AugmentationAction records its mediation.
 - AUG-3 Identity Preservation: actions that alter the principal's voice or written style require identity_consent.
-- AUG-4 Skill Maintenance: axes declared preserve are never replaced by agent action.
+- AUG-4 Skill Maintenance: no agent compensate or amplify action on an axis declared preserve in the profile version the action was taken under; re-declaring an axis governs later actions only.
 - AUG-5 Emergency Boundary: an emergency trigger forces a human handoff; no compensate or amplify action until a human acknowledges it.
+- AUG-6 Task-Scoped Step-Up: only the principal may take an axis back for one task; agents stay off that axis in that task until the task ends or the principal ends the step-up. Passing expires_at only makes a nudge due; it never resumes help.

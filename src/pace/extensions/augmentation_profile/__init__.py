@@ -16,6 +16,8 @@ from .types import (
     EmergencyTrigger,
     HandoffEvent,
     Mediation,
+    StepUpEndReason,
+    StepUpEvent,
 )
 from .validators import (
     AugmentationError,
@@ -25,6 +27,9 @@ from .validators import (
     check_identity_preservation,
     check_reversibility,
     check_skill_maintenance,
+    check_step_up,
+    check_step_up_grant,
+    check_step_up_nudge,
 )
 
 __all__ = [
@@ -38,12 +43,17 @@ __all__ = [
     "EmergencyTrigger",
     "HandoffEvent",
     "Mediation",
+    "StepUpEndReason",
+    "StepUpEvent",
     "audit_action",
     "check_audit_decomposition",
     "check_emergency_boundary",
     "check_identity_preservation",
     "check_reversibility",
     "check_skill_maintenance",
+    "check_step_up",
+    "check_step_up_grant",
+    "check_step_up_nudge",
 ]
 
 EXTENSION_URI = (

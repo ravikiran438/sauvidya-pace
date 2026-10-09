@@ -57,6 +57,8 @@ async def test_server_lists_tools_over_stdio():
         "validate_identity_preservation",
         "validate_skill_maintenance",
         "validate_emergency_boundary",
+        "validate_step_up",
+        "check_step_up_nudge",
         # AgentCard descriptor + sibling primitives
         "validate_accessibility_service_ref",
         "validate_active_challenge",
