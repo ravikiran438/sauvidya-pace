@@ -2,31 +2,37 @@
 name = "pace"
 version = "0.1.0"
 description = "PACE specification, reference types, validators, and TLA+ model for principal accessibility in agent networks"
-requires-python = ">=3.12"
-license = { text = "Apache-2.0" }
+readme = "README.md"
+requires-python = ">=3.14"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "Ravi Kiran Kadaboina" }]
 dependencies = [
-    "pydantic>=2.6",
+    "pydantic>=2.14",
 ]
 
 [project.optional-dependencies]
-test = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.23",
-]
 mcp = [
-    "mcp>=1.0",
+    "mcp>=2.3,<3",
 ]
 
 [project.scripts]
 pace-mcp = "pace.mcp_server.server:main"
 
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+[project.urls]
+Homepage = "https://ravikiran438.github.io/agent-protocol-stack/protocols/sauvidya/"
+Paper = "https://doi.org/10.5281/zenodo.19633138"
+Repository = "https://github.com/ravikiran438/sauvidya-pace"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[dependency-groups]
+dev = [
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13"]
+build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

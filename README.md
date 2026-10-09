@@ -85,10 +85,12 @@ sauvidya-pace/
 
 ## Running Tests
 
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.14+ (uv installs
+the interpreter pinned in `.python-version` automatically).
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[test]"
-pytest -v
+uv sync --all-extras   # creates .venv with dev tools and the MCP extra
+uv run pytest -v
 ```
 
 32 tests covering type construction, bounds, and all six validator

@@ -9,16 +9,17 @@ client; see the VSCode section below for one concrete configuration.
 
 **For end users (no clone needed):**
 
-Run directly with `uvx` in an ephemeral environment:
+Requires Python 3.14+. Run directly with `uvx` in an ephemeral
+environment:
 
 ```bash
-uvx --from 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.1.0' pace-mcp
+uvx --from 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@main' pace-mcp
 ```
 
-Or install persistently with `pip` into an existing venv:
+Or install it as a persistent tool:
 
 ```bash
-pip install 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.1.0'
+uv tool install 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@main'
 ```
 
 **For contributors (clone):**
@@ -26,10 +27,11 @@ pip install 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v
 From the repository root:
 
 ```bash
-pip install -e '.[mcp]'
+uv sync --extra mcp
+uv run pace-mcp --doctor   # structural self-check
 ```
 
-Either path installs the MCP Python SDK alongside the PACE package
+Each path installs the MCP Python SDK (2.x) alongside the PACE package
 and registers the `pace-mcp` console script in the active Python
 environment.
 
@@ -78,7 +80,7 @@ globally via your VSCode user settings, under the MCP section).
       "command": "uvx",
       "args": [
         "--from",
-        "pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.1.0",
+        "pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@main",
         "pace-mcp"
       ]
     }

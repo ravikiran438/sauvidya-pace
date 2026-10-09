@@ -107,3 +107,20 @@ async def test_server_call_language_match_over_stdio():
     body = json.loads(result.content[0].text)
     assert body["ok"] is False
     assert "IM-2" in body["error"]
+
+
+@pytest.mark.asyncio
+async def test_server_unknown_tool_returns_error_result():
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "pace.mcp_server"],
+        env=_spawn_env(),
+    )
+
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool("no_such_tool", {})
+
+    assert result.is_error is True
+    assert "no_such_tool" in result.content[0].text

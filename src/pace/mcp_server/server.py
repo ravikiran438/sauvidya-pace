@@ -20,7 +20,7 @@ pratyahara-nerve). When copying this file, change only:
   - SERVER_NAME, SERVER_VERSION, SERVER_INSTRUCTIONS
   - the `from pace.mcp_server.tools import ...` line
 
-The rest (build_server, _run, main, the two decorators, stdio plumbing)
+The rest (build_server, _run, main, the two handlers, stdio plumbing)
 is deliberately generic so each repo stays independently installable
 without a shared package dependency.
 """
@@ -32,8 +32,16 @@ import sys
 from typing import Any
 
 from mcp.server import Server
+from mcp.server.lowlevel.server import ServerRequestContext
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import (
+    CallToolRequestParams,
+    CallToolResult,
+    ListToolsResult,
+    PaginatedRequestParams,
+    TextContent,
+    Tool,
+)
 
 from pace.mcp_server.tools import HANDLERS, TOOL_SCHEMAS, ToolInvocationError
 
@@ -52,38 +60,49 @@ SERVER_INSTRUCTIONS = (
 )
 
 
-def build_server() -> Server:
-    server = Server(
-        name=SERVER_NAME,
-        version=SERVER_VERSION,
-        instructions=SERVER_INSTRUCTIONS,
-    )
-
-    @server.list_tools()
-    async def list_tools() -> list[Tool]:
-        return [
+async def _list_tools(
+    ctx: ServerRequestContext[Any], params: PaginatedRequestParams | None
+) -> ListToolsResult:
+    return ListToolsResult(
+        tools=[
             Tool(
                 name=name,
                 description=schema["description"],
-                inputSchema=schema["inputSchema"],
+                input_schema=schema["inputSchema"],
             )
             for name, schema in TOOL_SCHEMAS.items()
         ]
+    )
 
-    @server.call_tool()
-    async def call_tool(
-        name: str, arguments: dict[str, Any]
-    ) -> list[TextContent]:
-        handler = HANDLERS.get(name)
-        if handler is None:
-            raise ValueError(f"unknown tool {name!r}")
-        try:
-            result = handler(arguments)
-        except ToolInvocationError as exc:
-            raise ValueError(str(exc)) from exc
-        return [TextContent(type="text", text=result)]
 
-    return server
+async def _call_tool(
+    ctx: ServerRequestContext[Any], params: CallToolRequestParams
+) -> CallToolResult:
+    handler = HANDLERS.get(params.name)
+    if handler is None:
+        return _error_result(f"unknown tool {params.name!r}")
+    try:
+        result = handler(params.arguments or {})
+    except ToolInvocationError as exc:
+        return _error_result(str(exc))
+    return CallToolResult(content=[TextContent(type="text", text=result)])
+
+
+def _error_result(message: str) -> CallToolResult:
+    return CallToolResult(
+        content=[TextContent(type="text", text=message)], is_error=True
+    )
+
+
+def build_server() -> Server:
+    """Build the stdio server using MCP SDK 2.x constructor-based handlers."""
+    return Server(
+        SERVER_NAME,
+        version=SERVER_VERSION,
+        instructions=SERVER_INSTRUCTIONS,
+        on_list_tools=_list_tools,
+        on_call_tool=_call_tool,
+    )
 
 
 async def _run() -> None:
