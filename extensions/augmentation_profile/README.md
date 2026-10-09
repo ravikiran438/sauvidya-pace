@@ -72,7 +72,6 @@ good day. Lasting changes go through a new profile version instead.
 | File | Purpose |
 |---|---|
 | [`README.md`](./README.md) | This file |
-| [`STATUS.md`](./STATUS.md) | Stage, URI, and scope |
 | [`AugmentationProfile.tla`](./AugmentationProfile.tla) | TLA+ specification of AUG-1..AUG-6 |
 | [`AugmentationProfile.cfg`](./AugmentationProfile.cfg) | Safety invariants (4,048,527 distinct states, no errors) |
 | [`AugmentationProfile-Liveness.cfg`](./AugmentationProfile-Liveness.cfg) | AUG-6 nudge liveness (`NudgeDue`) on a smaller model |
@@ -144,6 +143,13 @@ action = AugmentationAction(
 check_skill_maintenance(profile, action)  # passes
 ```
 
+## Status
+
+- **Stage:** reference implementation, draft
+- **Extension URI:** `https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1`
+- **Depends on:** PACE Core 0.1+
+- **Changes:** see the repository [CHANGELOG](../../CHANGELOG.md)
+
 ## Relationship to PACE Core
 
 This extension is additive. Agents that do not declare an
@@ -153,6 +159,33 @@ explicit augmentation contracts with six contractual safety
 guarantees, without changing any PACE Core invariants (PCP-1, PCP-2,
 PCP-3, IM-1, IM-2, CCC-1, CCC-2, AIC-1, AIC-2, AIC-3, AIC-4 are
 unchanged).
+
+- `AugmentationProfile` references the principal's
+  `PrincipalCapabilityProfile` through `pcp_version`. A profile change
+  that implies a new capacity statement MUST also update `pcp_version`.
+- The `AdaptiveInteractionContract` governs interaction-time rules;
+  this extension operates at the action level, one layer above.
+
+## Open work
+
+- Population-specific augmentation taxonomies (elder care, BCI users,
+  autistic users), which are application-layer concerns
+- Composition with Phala welfare detectors: which detectors apply at
+  which capacity profile
+- An empirical study of skill-atrophy rates with and without AUG-4
+- Reference profiles for common deployments
+
+## Not in scope
+
+- Specific augmentation algorithms (BCI signal interpretation, social
+  cue decoders, executive-function scaffolds), which are agent-local
+- Hardware-side augmentation (BCI device calibration, sensor fusion)
+- Therapeutic recommendations, which are clinical, not protocol
+
+## Feedback
+
+Open an issue or pull request on this repository and put
+`[augmentation-profile]` at the start of the title.
 
 ## References
 
