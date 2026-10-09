@@ -15,8 +15,8 @@ sequenceDiagram
 
     Agent->>P: Voice call in Telugu<br/>"Amma, two home aide options..."
     P->>Agent: "First one sounds good"
-    Agent->>Agent: Create ConsentRecord<br/>with PACE metadata
+    Agent->>Agent: Create ConsentRecord<br/>+ on-device PACEConsentAnnotation
 
     Note over Agent: 6 weeks later...
-    Agent->>PCP: WelfareTrace check
+    Agent->>PCP: Accessibility trace check
     Note over PCP: interaction_success_rate: 0.78<br/>ccc_trend: stable

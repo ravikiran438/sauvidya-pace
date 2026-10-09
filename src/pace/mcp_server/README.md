@@ -1,8 +1,9 @@
 # PACE MCP Server
 
 A reference [Model Context Protocol](https://modelcontextprotocol.io/)
-server that exposes PACE's six named accessibility-invariant validators
-as MCP tools. Uses stdio transport. Works with any MCP-compatible
+server that exposes PACE's validators as 20 MCP tools: the core
+accessibility invariants, the wire primitives, and the
+augmentation-profile extension. Uses stdio transport. Works with any MCP-compatible
 client; see the VSCode section below for one concrete configuration.
 
 ## Install
@@ -53,14 +54,40 @@ as a subprocess.
 
 ## Tools exposed
 
-| Tool | PACE invariant | Purpose |
+**Core invariants**
+
+| Tool | Invariant | Purpose |
 |---|---|---|
-| `validate_im_precondition` | IM-1 | Every InteractionModality references a current PCP before use. |
-| `validate_language_match` | IM-2 | Modality language is one the principal is fluent in. |
-| `validate_ccc_gate` | CCC-1 | Principals with fluctuating or guardian-required capacity need a current ConsentCapacityCheck authorizing consent. |
-| `validate_ccc_privacy` | CCC-2 | Only permitted fields of a CCC may be transmitted downstream. |
-| `validate_time_window` | AIC-1 | Current time is inside the contract's allowed interaction windows (emergency overrides). |
-| `validate_option_count` | AIC-2 | Number of options presented does not exceed the contract's cap. |
+| `validate_principal_capability_profile` | PCP | Structural check of a PrincipalCapabilityProfile at registration time. |
+| `validate_im_precondition` | IM-1 | An InteractionModality references the current PCP before use. |
+| `validate_language_match` | IM-2 | The modality's language is pinned by the PCP or meets the contract's fluency floor; the error names the next step. |
+| `validate_contract_language` | IM-2 | An AdaptiveInteractionContract does not bind a language the PCP rules out. |
+| `validate_ccc_gate` | CCC-1 | Principals with fluctuating, limited or guardian-required capacity have a passing ConsentCapacityCheck before consent. |
+| `validate_ccc_privacy` | CCC-2 | No private ConsentCapacityCheck field is transmitted downstream. |
+| `validate_relay_consent` | CCC-4 | Consent reached through a guardian relay carries a capacity check of the principal. |
+| `validate_time_window` | AIC-1 | The current time is inside the contract's interaction windows (emergencies excepted). |
+| `validate_option_count` | AIC-2 | The number of options presented stays within the contract's cap. |
+
+**Wire primitives**
+
+| Tool | Purpose |
+|---|---|
+| `validate_accessibility_service_ref` | Validates the AgentCard `capabilities.extensions[]` entry for PACE. |
+| `validate_active_challenge` | Validates ActiveChallenge evidence (keyed digests, timing, classification). |
+| `validate_pace_consent_annotation` | Validates a PACEConsentAnnotation, including its capacity-check fields. |
+| `validate_pace_violation_notice` | Validates a PACEViolationNotice and reports how a receiver handles it (V-1 to V-3). |
+| `compute_ccc_trend` | Computes the capacity-check trend with the reference OLS-slope algorithm. |
+
+**Augmentation-profile extension**
+
+| Tool | Invariant | Purpose |
+|---|---|---|
+| `validate_reversibility` | AUG-1 | No agent action on an axis after the principal reverted it. |
+| `validate_identity_preservation` | AUG-3 | Agent actions that alter voice or style cite identity consent. |
+| `validate_skill_maintenance` | AUG-4 | No agent action on an axis declared `preserve` in the profile version in force. |
+| `validate_emergency_boundary` | AUG-5 | No agent action between an emergency handoff and human acknowledgement. |
+| `validate_step_up` | AUG-6 | No agent action on an axis the principal stepped up on in the same task. |
+| `check_step_up_nudge` | AUG-6 | Reports whether a step-up is past its time limit and the principal is due a nudge. |
 
 All tools take and return JSON. See `src/pace/mcp_server/tools.py`
 for input schemas and output shapes.
@@ -106,8 +133,9 @@ extension under the `pace` server name.
 
 ## Sample payloads
 
-See [`EXAMPLES.md`](./EXAMPLES.md) for ready-to-paste JSON per tool,
-covering the happy path and the failure variant for each invariant.
+See [`EXAMPLES.md`](./EXAMPLES.md) for ready-to-paste JSON for the
+core invariant tools, covering the happy path and the failure variant of
+each.
 
 ## Doctor check
 
@@ -115,7 +143,7 @@ Run a structural self-check (tool registry intact, schemas
 well-formed) without spawning the stdio loop:
 
 ```bash
-pace-mcp --doctor
+uv run pace-mcp --doctor
 ```
 
 Exit code is 0 when all tools register correctly, 1 otherwise.
@@ -123,7 +151,7 @@ Exit code is 0 when all tools register correctly, 1 otherwise.
 ## Testing
 
 ```bash
-pytest tests/mcp_server/
+uv run pytest tests/mcp_server/
 ```
 
 Handler-level tests hit `tools.py` directly; one stdio smoke test

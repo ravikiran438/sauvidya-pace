@@ -3,11 +3,11 @@ graph TD
     PCP -->|read by| Agent[Agent]
     Agent -->|computes| IM[InteractionModality<br/>adapted communication plan]
     IM -->|before consent| CCC{ConsentCapacityCheck<br/>capacity_signal >= threshold?}
-    CCC -->|proceed/simplify| CR[ConsentRecord<br/>with PACE metadata]
+    CCC -->|proceed/simplify| CR[ConsentRecord<br/>+ on-device PACEConsentAnnotation]
     CCC -->|defer| WAIT[Wait for next valid window]
     CCC -->|escalate| GN[Notify Guardian]
     CR -->|governed by| AIC[AdaptiveInteractionContract<br/>time windows, option limits,<br/>violation policy]
-    AIC -->|outcome feeds| WT[WelfareTrace<br/>accessibility metrics]
+    AIC -->|outcome feeds| WT[Accessibility trace<br/>with Phala WelfareTrace]
     WT -->|declining trajectory| G
 
     style PCP fill:#d4edda,stroke:#28a745

@@ -1,11 +1,11 @@
 # PACE MCP Server — Sample Payloads
 
-Ready-to-paste JSON for every tool exposed by `pace-mcp`. Drop any
+Ready-to-paste JSON for the core invariant tools of `pace-mcp`. Drop any
 block at an MCP client with an invocation like:
 
 > Call `validate_time_window` with this input: `<paste>`
 
-Each tool maps 1:1 to a named PACE invariant. Happy-path payloads
+Each of these tools maps 1:1 to a named PACE invariant. Happy-path payloads
 return `"ok": true`; failure variants trip the invariant.
 
 ---
