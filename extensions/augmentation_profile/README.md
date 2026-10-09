@@ -184,8 +184,10 @@ unchanged).
 
 ## Feedback
 
-Open an issue or pull request on this repository and put
-`[augmentation-profile]` at the start of the title.
+Use the [feedback form](https://github.com/ravikiran438/sauvidya-pace/issues/new?template=capability-feedback.yml)
+and choose "Letting the agent help, or doing it myself", or open a
+[spec change](https://github.com/ravikiran438/sauvidya-pace/issues/new?template=spec-change.yml)
+and put `[augmentation-profile]` at the start of the title.
 
 ## References
 

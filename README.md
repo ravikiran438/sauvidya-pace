@@ -242,6 +242,14 @@ sauvidya-pace/
 └── CHANGELOG.md
 ```
 
+## Contributing
+
+Feedback from people who live with a disability, caregivers and
+accessibility practitioners is the most valuable input this project
+gets, and it needs no code: the
+[feedback form](https://github.com/ravikiran438/sauvidya-pace/issues/new?template=capability-feedback.yml)
+takes a few minutes. Developers, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Citation
 
 ```bibtex

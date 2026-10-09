@@ -1,0 +1,35 @@
+name: Bug report
+description: The reference implementation, MCP server, manifests or TLA+ model behave wrongly.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Output of `uv run python -c "import pace; print(pace.__version__)"`, or a commit hash.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal input (JSON payload, Python snippet or TLC config) that shows the problem.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Cite the invariant or spec text if it applies.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Error messages, wrong output, or TLC counterexample.
+      render: text
+    validations:
+      required: true

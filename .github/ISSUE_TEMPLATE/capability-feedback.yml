@@ -1,0 +1,69 @@
+name: Accessibility and capability feedback
+description: Tell us where PACE gets real people wrong. No code or protocol knowledge needed.
+title: "[feedback] "
+labels: ["capability-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping. PACE decides how an AI agent talks to a person:
+        which language, what time of day, how many choices, how slowly, and
+        whether the person can really agree to something right now. Your
+        experience is the best test of whether it gets that right.
+
+        **Please keep it general.** This page is public. Describe situations,
+        not identifiable people, and don't share anyone's medical details.
+        Write in whatever language is easiest for you; we'll translate.
+  - type: checkboxes
+    id: perspective
+    attributes:
+      label: Your perspective (optional)
+      description: Pick any that apply. This helps us weigh the feedback, and you can skip it.
+      options:
+        - label: I'm describing my own experience
+        - label: I care for or support someone
+        - label: I work in accessibility, disability services or elder care
+        - label: I'm a clinician or researcher
+        - label: I build software or agents
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part does this touch?
+      description: Choose the closest match. "Something missing" is a perfectly good answer.
+      options:
+        - Seeing (vision)
+        - Hearing
+        - Movement and touch (motor)
+        - Thinking, memory or attention (cognition)
+        - Language
+        - Reading and writing (literacy)
+        - Comfort with technology
+        - Making decisions and giving consent
+        - Time of day, pacing or tiredness
+        - Guardians, caregivers or relays
+        - Emergencies
+        - Letting the agent help, or doing it myself (augmentation profile)
+        - Something missing
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: situation
+    attributes:
+      label: What happens, or what could go wrong?
+      description: A real or realistic situation where an agent would get this wrong.
+      placeholder: "For example: an agent reads three options aloud quickly, and by the third I've lost the first."
+    validations:
+      required: true
+  - type: textarea
+    id: better
+    attributes:
+      label: What should happen instead?
+      description: What would actually work for you or the person you support.
+    validations:
+      required: true
+  - type: textarea
+    id: protocol
+    attributes:
+      label: Anything PACE should add, remove or change? (optional)
+      description: If you've read the paper or the spec, point to a primitive, field or invariant. Otherwise leave this blank.

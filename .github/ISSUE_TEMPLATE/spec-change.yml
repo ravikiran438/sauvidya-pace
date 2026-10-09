@@ -1,0 +1,39 @@
+name: Spec change
+description: Propose a change to the PACE protocol (primitives, invariants, wire format).
+title: "spec: "
+labels: ["spec-change"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What the current spec gets wrong, leaves ambiguous, or doesn't cover. Cite the paper section, invariant (e.g. IM-2, CCC-4, AUG-6) or manifest field.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: The exact MUST / SHOULD / MAY wording, or the field and type changes.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Invariants and model checking
+      description: Which invariants change, and whether the TLA+ model in specification/ or extensions/augmentation_profile/ needs a new invariant or action.
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Wire compatibility
+      options:
+        - Not breaking - existing payloads stay valid
+        - Breaking - existing payloads or agents need to change
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: migration
+    attributes:
+      label: Migration (if breaking)
+      description: What implementers change, and how.

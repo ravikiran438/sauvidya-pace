@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the paper
+    url: https://doi.org/10.5281/zenodo.19633138
+    about: The full PACE specification and its rationale.
+  - name: Agent protocol stack
+    url: https://ravikiran438.github.io/agent-protocol-stack/
+    about: How PACE composes with the consent, welfare and verification protocols.
