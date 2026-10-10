@@ -43,9 +43,12 @@ uv run pytest
 uv run pace-mcp --doctor
 ```
 
-Model checking needs Java 11+ and `tla2tools.jar` from
-<https://github.com/tlaplus/tlaplus/releases>; the commands are in the
-README.
+Model checking needs Java 11+:
+
+```bash
+scripts/check-models.sh core augmentation witnesses mutants   # under a minute
+scripts/check-models.sh                                       # everything
+```
 
 ### Pull request checklist
 
@@ -54,7 +57,8 @@ README.
   regenerate the manifests with `uv run python -m pace.manifest --write`
   and commit the result. A test fails when they drift.
 - If you changed protocol behavior, update the TLA+ model where it
-  applies and run TLC on the affected configs.
+  applies and run `scripts/check-models.sh`. CI runs it on every push
+  and pull request.
 - Add an entry under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md),
   and mark wire-breaking changes **Breaking**.
 - Use [Conventional Commits](https://www.conventionalcommits.org/)

@@ -1,5 +1,7 @@
 # Sauvidya PACE
 
+[![CI status](https://github.com/ravikiran438/sauvidya-pace/actions/workflows/ci.yml/badge.svg)](https://github.com/ravikiran438/sauvidya-pace/actions/workflows/ci.yml)
+
 **Status:** Draft 0.1.0 (unreleased changes in [CHANGELOG](CHANGELOG.md))
 **Paper:** [Sauvidya: An Accessibility Protocol for Agent-to-Principal Interaction in Autonomous Agent Networks](https://doi.org/10.5281/zenodo.19633138)
 **Extension URI:** `https://ravikiran438.github.io/sauvidya-pace/v1`
@@ -171,8 +173,18 @@ invariants; V-2 (one-hop) and V-3 (scope) are enforced by the
 
 ### Model checking
 
-Uses the TLA+ tools jar (`tla2tools.jar`) from
-<https://github.com/tlaplus/tlaplus/releases> and Java 11+.
+Needs Java 11+. One script runs every check, locally and in CI; it
+downloads the pinned `tla2tools.jar` and verifies its checksum:
+
+```bash
+scripts/check-models.sh            # everything (about 3 minutes)
+scripts/check-models.sh core augmentation witnesses mutants   # under a minute
+```
+
+Besides the configs below, it runs **reachability witnesses** (scenarios
+that must be reachable, so the invariants don't pass vacuously) and
+**mutants** (copies of the model with a guard removed, which TLC must
+catch). To run a single config by hand:
 
 ```bash
 cd specification

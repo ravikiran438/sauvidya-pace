@@ -37,6 +37,11 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   notices between two orchestrators (8,249,080 distinct states).
 - `AugmentationProfile-Liveness.cfg`: checks that an expired step-up
   always leads to a nudge or to the step-up ending.
+- CI (GitHub Actions, pinned by commit SHA): tests, manifest drift
+  check and MCP self-check on Python 3.14, plus every TLA+ model.
+- `scripts/check-models.sh`: runs all TLC configs, reachability
+  witnesses (`AugmentationProfileWitness.tla`) and mutants that TLC must
+  catch, with a pinned, checksum-verified `tla2tools.jar`.
 - `InteractionRules.min_language_fluency` (default 0.7, guardian
   configurable) and `acceptable_languages()`, which implement the IM-2
   language rule.
