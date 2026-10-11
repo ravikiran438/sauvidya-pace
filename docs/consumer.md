@@ -44,8 +44,10 @@ Surfaces: a guardian notification payload, a readable view of the
 contract, the violation notice.
 **The one number:** violations that reach him with enough to act on
 (agent, rule, local times in both zones, action taken): **100%**.
-Status: ❌. `notify_guardian` is a string with no payload, and time
-windows have no time zone (perturbations 16 and 18).
+Status: ✅ (fixture). `enforce_violation` produces this notification from
+the real contract: 18:40 IST and 08:10 CDT, agent blocked, next contact
+09:00 IST (`test_guardian_story_from_consumer_md`). No delivery channel
+or guardian app shows it yet.
 
 ## Agent developer
 

@@ -27,6 +27,7 @@ from pace.mcp_server.tools import (
     handle_validate_relay_consent,
     handle_validate_option_count,
     handle_validate_modality_contract,
+    handle_enforce_violation,
     handle_validate_principal_capability_profile,
     handle_validate_reversibility,
     handle_validate_skill_maintenance,
@@ -644,3 +645,28 @@ def test_modality_contract_rejects_short_timeout():
         handle_validate_modality_contract({"modality": modality, "contract": _contract()})
     )
     assert result["ok"] is True
+
+
+def test_enforce_violation_returns_guardian_notification():
+    result = json.loads(
+        handle_enforce_violation(
+            {
+                "contract": _contract(),
+                "violation_type": "time_window",
+                "agent_id": "booking-agent",
+                "at": "2026-10-10T08:10:00-05:00",
+                "guardian_timezone": "America/Chicago",
+            }
+        )
+    )
+    assert result["ok"] is True
+    assert result["broadcast_block"] is True
+    assert result["notification"]["principal_local_time"] == "18:40 IST (Sat 10 Oct)"
+
+
+def test_enforce_violation_rejects_unknown_type():
+    with pytest.raises(ToolInvocationError, match="cannot enforce"):
+        handle_enforce_violation(
+            {"contract": _contract(), "violation_type": "rudeness",
+             "agent_id": "a1", "at": "2026-10-10T08:10:00-05:00"}
+        )

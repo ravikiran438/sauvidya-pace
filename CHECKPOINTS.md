@@ -45,8 +45,11 @@ violation reaches the guardian with enough to act on.
 - ✅ A contract test: InteractionModality vs AdaptiveInteractionContract
   (AIC-5: language, timeout, speech rate, options, information density,
   confirmation style, memory recap). Unread fields: 13 → 8 of 20.
-- A guardian notification payload behind `notify_guardian`
-  (perturbation 18), readable without converting time zones.
+- ✅ A guardian notification behind `notify_guardian` (perturbation 18),
+  readable without converting time zones. Unread fields: 8 → 4 of 21.
+- AIC-3: `non_response_policy` with a validator, and a check that every
+  contract field the paper names exists in the code (perturbations 25,
+  27).
 - A decided counting unit for `max_interactions_per_day`.
 - **Exit:** 0 unread fields; the guardian story in
   [docs/consumer.md](docs/consumer.md) runs ✅ (fixture).

@@ -90,6 +90,7 @@ one of ['te'], otherwise escalate to the guardian. Do not fall back to 'en'.
 | `ActiveChallenge` | Tamper-evident evidence of an active capacity check: HMAC-SHA256 digests under an on-device audit key, bound to the challenge. |
 | `CCCTrend` | Whether capacity checks are trending stable, improving or declining. |
 | `PACEViolationNotice` | Signed, one-hop broadcast that blocks an agent across orchestrators after a contract violation. |
+| `GuardianNotification` | What the guardian receives on a violation: the agent, the rule, a plain-language summary, both clocks, the actions taken and when agents may next contact her. No capacity data. |
 
 ## Language and relay rules
 
@@ -162,7 +163,7 @@ invariants, wire primitives and the augmentation extension. See the
 | PCP-Sovereignty | No remote agent may write or modify a PCP | API shape: the reference implementation has no remote write path. Not model-checked. |
 | IM-Precondition | No interaction without computing InteractionModality from PCP | TLC invariant `IMPrecondition`; validators `validate_im_precondition`, `validate_language_match` |
 | CCC-Gate | No consent without capacity check for fluctuating/limited principals | TLC invariant `CCCGate`; validators `validate_ccc_gate`, `validate_relay_consent` |
-| AIC-Enforcement | Contract violations trigger automatic violation_policy | TLC invariant `AICOptionBound` (AIC-2); AIC-1 enforced by the `CreateConsent` action guard; validators `validate_time_window`, `validate_option_count`, `validate_contract_language`, `validate_modality_contract` (AIC-5) |
+| AIC-Enforcement | Contract violations trigger automatic violation_policy | `enforce_violation` applies the policy; TLC invariant `AICOptionBound` (AIC-2); AIC-1 enforced by the `CreateConsent` action guard; validators `validate_time_window`, `validate_option_count`, `validate_contract_language`, `validate_modality_contract` (AIC-5) |
 | Privacy-Preservation | CCC results never transmitted to remote agents | Validator `validate_ccc_privacy`; `ActiveChallenge` digests are keyed. Not model-checked. |
 | Non-Diagnosis | No PACE primitive produces or stores a clinical assessment | By construction: no primitive has a diagnostic field. Not model-checked. |
 

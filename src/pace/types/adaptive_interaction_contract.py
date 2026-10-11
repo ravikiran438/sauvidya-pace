@@ -16,6 +16,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from pace.types.violation_notice import EnforcementAction
+
 
 class TimeWindow(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -23,12 +25,43 @@ class TimeWindow(BaseModel):
     end: str = Field(..., description="HH:MM format")
 
 
+def _actions(*names: str) -> list[EnforcementAction]:
+    return [EnforcementAction(n) for n in names]
+
+
 class ViolationPolicy(BaseModel):
+    """What happens when an agent breaks the contract (AIC-4).
+
+    Each field is the list of actions for one kind of violation. The
+    paper's ``"block_agent + notify_guardian"`` string form is accepted.
+    """
+
     model_config = ConfigDict(frozen=True)
-    on_time_window_violation: str = Field(default="block_agent + notify_guardian")
-    on_option_overload: str = Field(default="reject_interaction + log")
-    on_language_mismatch: str = Field(default="reject_interaction + escalate")
-    on_capacity_check_skip: str = Field(default="block_agent + notify_guardian + audit_flag")
+    on_time_window_violation: list[EnforcementAction] = Field(
+        default_factory=lambda: _actions("block_agent", "notify_guardian")
+    )
+    on_option_overload: list[EnforcementAction] = Field(
+        default_factory=lambda: _actions("reject_interaction", "log")
+    )
+    on_language_mismatch: list[EnforcementAction] = Field(
+        default_factory=lambda: _actions("reject_interaction", "escalate")
+    )
+    on_capacity_check_skip: list[EnforcementAction] = Field(
+        default_factory=lambda: _actions(
+            "block_agent", "notify_guardian", "audit_flag"
+        )
+    )
+    on_modality_contract_violation: list[EnforcementAction] = Field(
+        default_factory=lambda: _actions("reject_interaction", "log"),
+        description="AIC-5: an agent's plan steps outside the contract.",
+    )
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _split_plus_form(cls, value):
+        if isinstance(value, str):
+            return [part.strip() for part in value.split("+") if part.strip()]
+        return value
 
 
 class InteractionRules(BaseModel):

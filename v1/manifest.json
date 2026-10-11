@@ -237,6 +237,19 @@
       "method": "GET",
       "schema": {
         "$defs": {
+          "EnforcementAction": {
+            "description": "The action the issuing orchestrator applied locally and is asking\npeers to mirror.\n\nNames align with the strings used in ``ViolationPolicy`` defaults\n(``\"block_agent + notify_guardian\"`` etc.) but split into structured\nenum values so peers can apply enforcement without parsing.",
+            "enum": [
+              "block_agent",
+              "reject_interaction",
+              "notify_guardian",
+              "audit_flag",
+              "escalate",
+              "log"
+            ],
+            "title": "EnforcementAction",
+            "type": "string"
+          },
           "InteractionRules": {
             "properties": {
               "response_timeout_seconds": {
@@ -355,26 +368,43 @@
             "type": "object"
           },
           "ViolationPolicy": {
+            "description": "What happens when an agent breaks the contract (AIC-4).\n\nEach field is the list of actions for one kind of violation. The\npaper's ``\"block_agent + notify_guardian\"`` string form is accepted.",
             "properties": {
               "on_time_window_violation": {
-                "default": "block_agent + notify_guardian",
+                "items": {
+                  "$ref": "#/$defs/EnforcementAction"
+                },
                 "title": "On Time Window Violation",
-                "type": "string"
+                "type": "array"
               },
               "on_option_overload": {
-                "default": "reject_interaction + log",
+                "items": {
+                  "$ref": "#/$defs/EnforcementAction"
+                },
                 "title": "On Option Overload",
-                "type": "string"
+                "type": "array"
               },
               "on_language_mismatch": {
-                "default": "reject_interaction + escalate",
+                "items": {
+                  "$ref": "#/$defs/EnforcementAction"
+                },
                 "title": "On Language Mismatch",
-                "type": "string"
+                "type": "array"
               },
               "on_capacity_check_skip": {
-                "default": "block_agent + notify_guardian + audit_flag",
+                "items": {
+                  "$ref": "#/$defs/EnforcementAction"
+                },
                 "title": "On Capacity Check Skip",
-                "type": "string"
+                "type": "array"
+              },
+              "on_modality_contract_violation": {
+                "description": "AIC-5: an agent's plan steps outside the contract.",
+                "items": {
+                  "$ref": "#/$defs/EnforcementAction"
+                },
+                "title": "On Modality Contract Violation",
+                "type": "array"
               }
             },
             "title": "ViolationPolicy",
@@ -420,6 +450,145 @@
       }
     },
     {
+      "name": "GuardianNotification",
+      "description": "What the guardian receives when the contract's policy says notify_guardian (AIC-4): the agent, the rule, a plain-language summary, both clocks, the actions taken and the next allowed contact. Carries no capacity data (CCC-2).",
+      "endpoint_field": "guardian_escalation_endpoint",
+      "method": "POST",
+      "schema": {
+        "$defs": {
+          "EnforcementAction": {
+            "description": "The action the issuing orchestrator applied locally and is asking\npeers to mirror.\n\nNames align with the strings used in ``ViolationPolicy`` defaults\n(``\"block_agent + notify_guardian\"`` etc.) but split into structured\nenum values so peers can apply enforcement without parsing.",
+            "enum": [
+              "block_agent",
+              "reject_interaction",
+              "notify_guardian",
+              "audit_flag",
+              "escalate",
+              "log"
+            ],
+            "title": "EnforcementAction",
+            "type": "string"
+          },
+          "ViolationType": {
+            "description": "Which AIC clause was breached. Mirrors ViolationPolicy keys.",
+            "enum": [
+              "time_window",
+              "option_overload",
+              "language_mismatch",
+              "capacity_check_skip",
+              "modality_contract"
+            ],
+            "title": "ViolationType",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "notification_id": {
+            "minLength": 1,
+            "title": "Notification Id",
+            "type": "string"
+          },
+          "principal_id": {
+            "minLength": 1,
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "guardian_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The approving guardian, when the contract names one.",
+            "title": "Guardian Id"
+          },
+          "agent_id": {
+            "description": "The agent that broke the contract.",
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "rule": {
+            "description": "The invariant broken, e.g. 'AIC-1'.",
+            "title": "Rule",
+            "type": "string"
+          },
+          "violation_type": {
+            "$ref": "#/$defs/ViolationType"
+          },
+          "summary": {
+            "description": "What happened, in plain words.",
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "occurred_at": {
+            "description": "When it happened, zone-aware.",
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "principal_local_time": {
+            "description": "When it happened on the principal's clock, with her zone.",
+            "title": "Principal Local Time",
+            "type": "string"
+          },
+          "guardian_local_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "When it happened on the guardian's clock, when the orchestrator knows it.",
+            "title": "Guardian Local Time"
+          },
+          "actions_taken": {
+            "items": {
+              "$ref": "#/$defs/EnforcementAction"
+            },
+            "minItems": 1,
+            "title": "Actions Taken",
+            "type": "array"
+          },
+          "next_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "What happens next without the guardian doing anything.",
+            "title": "Next Step"
+          }
+        },
+        "required": [
+          "notification_id",
+          "principal_id",
+          "agent_id",
+          "rule",
+          "violation_type",
+          "summary",
+          "occurred_at",
+          "principal_local_time",
+          "actions_taken"
+        ],
+        "title": "GuardianNotification",
+        "type": "object"
+      }
+    },
+    {
       "name": "PACEViolationNotice",
       "description": "Signed one-hop broadcast of an AIC violation to peer orchestrators (V-1, V-2, V-3).",
       "endpoint_field": "violation_notice_endpoint",
@@ -433,7 +602,8 @@
               "reject_interaction",
               "notify_guardian",
               "audit_flag",
-              "escalate"
+              "escalate",
+              "log"
             ],
             "title": "EnforcementAction",
             "type": "string"
@@ -444,7 +614,8 @@
               "time_window",
               "option_overload",
               "language_mismatch",
-              "capacity_check_skip"
+              "capacity_check_skip",
+              "modality_contract"
             ],
             "title": "ViolationType",
             "type": "string"
@@ -548,8 +719,8 @@
     "CCC-4: relay carries the question, not the consent: consent reached through a guardian relay requires a ConsentCapacityCheck of the principal that is not guardian_confirmed, unless decision_capacity is guardian_required.",
     "AIC-1: no interaction outside valid_time_windows unless classified as emergency. Windows and the sundown block are the principal's local times in interaction_rules.timezone, whatever clock the agent runs on.",
     "AIC-2: no more than max_options_per_turn options in a single turn.",
-    "AIC-3: after a response timeout, no immediate retry; escalate after non_response_policy.escalate_after non-responses.",
-    "AIC-4: contract violations trigger the declared violation_policy; cross-orchestrator blocks travel as signed PACEViolationNotice records.",
+    "AIC-3: after a response timeout, no immediate retry; escalate after repeated non-responses. Not yet implemented in this reference (no non_response_policy on the contract).",
+    "AIC-4: contract violations trigger the declared violation_policy; notify_guardian sends a GuardianNotification with both clocks and no capacity data, and cross-orchestrator blocks travel as signed PACEViolationNotice records.",
     "AIC-5: an InteractionModality stays within the contract it was computed under: the contract's language, a timeout at least as long, speech no faster, no more options, no denser information, the required confirmation style and memory recap.",
     "V-1: a receiver bound by the same aic_version for the principal MUST block offending_agent_id for at least block_duration_seconds.",
     "V-2: receivers MUST NOT forward a PACEViolationNotice (one-hop broadcast).",

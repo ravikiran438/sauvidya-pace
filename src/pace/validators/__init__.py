@@ -30,7 +30,16 @@ from pace.validators.contract import (
     OptionOverloadError,
 )
 
+from pace.validators.enforcement import (
+    EnforcementDecision,
+    enforce_violation,
+    next_window_start,
+)
+
 __all__ = [
+    "EnforcementDecision",
+    "enforce_violation",
+    "next_window_start",
     "DEFAULT_MIN_LANGUAGE_FLUENCY",
     "acceptable_languages",
     "validate_contract_language",

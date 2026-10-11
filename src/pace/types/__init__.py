@@ -36,6 +36,7 @@ from pace.types.interaction_modality import (
     ModalityPlan,
     PrimaryChannel,
 )
+from pace.types.guardian_notification import GuardianNotification
 from pace.types.pace_consent_annotation import PACEConsentAnnotation
 from pace.types.principal_capability_profile import (
     CapabilityLevel,
@@ -67,6 +68,7 @@ __all__ = [
     "DecisionCapacity",
     "EnforcementAction",
     "FallbackEntry",
+    "GuardianNotification",
     "InteractionModality",
     "InteractionRules",
     "LanguageFluency",

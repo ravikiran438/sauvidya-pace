@@ -28,9 +28,9 @@ unobservable, now has a signal) · **ok** (handled, with the reason) ·
 | 15 | TLC reports a different search depth on two runs (17, 18) | Parallel workers make reported depth approximate; state counts match | **ok**: depth is not published |
 | 16 | The agent runs in a US data center; the principal is in Hyderabad | `validate_time_window` took a bare `HH:MM`; neither `TimeWindow` nor the AIC had a time zone. 08:30 CDT is 19:00 IST, inside her sundown block | **bug**, fixed in CP2: required `timezone` on the contract; windows evaluated in her local time |
 | 17 | An agent's InteractionModality sets a 60 s timeout under a contract that says 300 s | Passed every check: 13 of 20 contract fields had no reader | **bug**, fixed in CP2: AIC-5 `validate_modality_contract` checks the plan against its contract |
-| 18 | A violation triggers `notify_guardian` | It is a string; no notification payload exists | **open → CP2**: define the notification |
+| 18 | A violation triggers `notify_guardian` | It was a string; no notification payload existed | **bug**, fixed in CP2: `enforce_violation` returns a `GuardianNotification` with both clocks and the next allowed contact |
 
-Round 1: 10 bug · 4 gap · 2 ok · 2 open (perturbations 16 and 17 were open, fixed in CP2).
+Round 1: 11 bug · 4 gap · 2 ok · 1 open (perturbations 16, 17 and 18 were open, fixed in CP2).
 
 ## Round 2 — during CP2 (2026-10-10)
 
@@ -42,6 +42,11 @@ Round 1: 10 bug · 4 gap · 2 ok · 2 open (perturbations 16 and 17 were open, f
 | 22 | A guardian enters "Asia/Hyderabad" as her time zone | Rejected at construction: not an IANA zone (Hyderabad uses `Asia/Kolkata`) | **ok**: `test_unknown_timezone_rejected` |
 | 23 | An agent ships with `ModalityPlan` defaults (60 s, rate 1.0, 5 options, no recap) | AIC-5 reports all six violations at once, as data (`problems`) | **ok**: `test_default_plan_reports_every_violation` |
 | 24 | I count unread contract fields by hand for the CP2 gate | I reported 12 of 18; the grep output I was reading showed 13 | **bug** (in the record), fixed: `scripts/contract-readers.py` measures it |
+| 25 | Someone asks whether AIC-1 to AIC-4 are all implemented | AIC-3 (no immediate retry, escalate after repeated non-responses) has no field and no validator: `non_response_policy` from the paper does not exist in the code | **open → C16** |
+| 26 | A validator reads the manifest's AIC-3 invariant | It cited `non_response_policy.escalate_after`, a field the code never defined; written from the paper without checking | **bug**, fixed: the manifest says AIC-3 is not yet implemented until C16 |
+| 27 | `contract-readers.py` is asked about a field the paper promises but the code never defined | It only checks fields that exist, so it cannot see a missing one | **gap → C16**: compare the paper's contract fields with the code's |
+| 28 | A guardian's notification is built with a capacity signal attached | Rejected: `GuardianNotification` forbids unknown fields | **ok**: `test_notification_cannot_carry_capacity_data` |
+| 29 | A guardian writes the paper's policy form, `"reject_interaction + notify_guardian"` | Parsed into structured actions; an unknown action is rejected | **ok**: `test_paper_string_form_accepted`, `test_unknown_action_rejected` |
 
 ## Candidates
 

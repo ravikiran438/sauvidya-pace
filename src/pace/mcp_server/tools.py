@@ -60,6 +60,7 @@ from pace.validators import (
     validate_time_window,
     validate_modality_contract,
     principal_local_time,
+    enforce_violation,
 )
 
 # augmentation_profile extension (AUG-1..AUG-6).
@@ -288,6 +289,33 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 "contract": {"type": "object"},
             },
             "required": ["modality", "contract"],
+        },
+    },
+    "enforce_violation": {
+        "description": (
+            "AIC-4: apply the contract's violation_policy to one violation "
+            "and return the actions, whether to broadcast a block, and, "
+            "when the policy says notify_guardian, the GuardianNotification "
+            "to send: plain-language summary, both clocks, actions taken, "
+            "and when agents may next contact her."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "contract": {"type": "object"},
+                "violation_type": {
+                    "type": "string",
+                    "enum": [
+                        "time_window", "option_overload", "language_mismatch",
+                        "capacity_check_skip", "modality_contract",
+                    ],
+                },
+                "agent_id": {"type": "string"},
+                "at": {"type": "string", "format": "date-time"},
+                "detail": {"type": "string"},
+                "guardian_timezone": {"type": "string"},
+            },
+            "required": ["contract", "violation_type", "agent_id", "at"],
         },
     },
     # ── augmentation_profile extension (AUG-1, AUG-3..AUG-6) ───────────────
@@ -649,6 +677,43 @@ def handle_validate_modality_contract(arguments: dict[str, Any]) -> str:
     return _ok({"modality": "within-contract"})
 
 
+def handle_enforce_violation(arguments: dict[str, Any]) -> str:
+    contract = _parse(
+        AdaptiveInteractionContract, arguments.get("contract"), "contract"
+    )
+    agent_id = arguments.get("agent_id")
+    if not isinstance(agent_id, str) or not agent_id:
+        raise ToolInvocationError("agent_id must be a non-empty string")
+    raw_at = arguments.get("at")
+    if not isinstance(raw_at, str):
+        raise ToolInvocationError("at must be an ISO 8601 timestamp string")
+    try:
+        at = datetime.fromisoformat(raw_at)
+        decision = enforce_violation(
+            contract,
+            arguments.get("violation_type"),
+            agent_id,
+            at,
+            detail=arguments.get("detail"),
+            guardian_timezone=arguments.get("guardian_timezone"),
+        )
+    except (ValueError, KeyError) as exc:
+        raise ToolInvocationError(f"cannot enforce: {exc}") from exc
+    return _ok(
+        {
+            "rule": decision.rule,
+            "actions": [a.value for a in decision.actions],
+            "broadcast_block": decision.broadcast_block,
+            "escalate": decision.escalate,
+            "notification": (
+                decision.notification.model_dump(mode="json")
+                if decision.notification
+                else None
+            ),
+        }
+    )
+
+
 # ── augmentation_profile extension handlers (AUG-1, AUG-3..AUG-6) ──
 
 
@@ -866,6 +931,7 @@ HANDLERS: dict[str, Any] = {
     "validate_time_window": handle_validate_time_window,
     "validate_option_count": handle_validate_option_count,
     "validate_modality_contract": handle_validate_modality_contract,
+    "enforce_violation": handle_enforce_violation,
     # augmentation_profile extension
     "validate_reversibility": handle_validate_reversibility,
     "validate_identity_preservation": handle_validate_identity_preservation,

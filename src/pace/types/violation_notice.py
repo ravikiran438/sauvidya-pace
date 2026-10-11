@@ -52,6 +52,7 @@ class ViolationType(str, Enum):
     OPTION_OVERLOAD = "option_overload"
     LANGUAGE_MISMATCH = "language_mismatch"
     CAPACITY_CHECK_SKIP = "capacity_check_skip"
+    MODALITY_CONTRACT = "modality_contract"
 
 
 class EnforcementAction(str, Enum):
@@ -68,6 +69,7 @@ class EnforcementAction(str, Enum):
     NOTIFY_GUARDIAN = "notify_guardian"
     AUDIT_FLAG = "audit_flag"
     ESCALATE = "escalate"
+    LOG = "log"
 
 
 class PACEViolationNotice(BaseModel):

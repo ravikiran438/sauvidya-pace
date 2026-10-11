@@ -46,6 +46,11 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   within its contract (language, timeout, speech rate, options,
   information density, confirmation style, memory recap), reporting every
   violation. MCP tool `validate_modality_contract`.
+- AIC-4 `enforce_violation`: applies the contract's violation policy and
+  returns the actions, whether to broadcast a block, and a
+  `GuardianNotification` (plain-language summary, both clocks, actions
+  taken, next allowed contact, no capacity data). New wire artefact,
+  POSTed to `guardian_escalation_endpoint`. MCP tool `enforce_violation`.
 - `scripts/contract-readers.py`: counts contract fields that no validator,
   binding or tool reads.
 - `InteractionRules.min_language_fluency` (default 0.7, guardian
@@ -65,6 +70,10 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   `ConsentRecord.pace` block to the sibling `PACEConsentAnnotation`,
   referenced by `consent_record_id`. See §4.1 of the paper for the
   migration.
+- **Breaking:** `ViolationPolicy` fields are lists of `EnforcementAction`
+  (the `"a + b"` string form is still accepted), with a new
+  `on_modality_contract_violation`. `EnforcementAction` gains `log`;
+  `ViolationType` gains `modality_contract`.
 - **Breaking:** `InteractionRules.timezone` (IANA, required): time
   windows and the sundown block are the principal's local times.
   `validate_time_window` takes a zone-aware `datetime` instead of an
@@ -95,6 +104,8 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
 
 ### Fixed
 
+- The manifest's AIC-3 invariant cited `non_response_policy`, a field the
+  code never defined; it now says AIC-3 is not yet implemented.
 - IM-2 ignored fluency and language pins: `validate_language_match`
   accepted any language listed in the PCP, so the paper's own example (an
   English call to a principal with English at 0.3 and `language:te`

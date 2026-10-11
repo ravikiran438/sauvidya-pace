@@ -92,6 +92,23 @@ in this file was not made.
   over the reader modules. It can over-count readers (a name used for
   something else), never under-count. A hand count was off by one.
 
+## Enforcement and the guardian
+
+- Violation policies are lists of the same `EnforcementAction` values the
+  cross-orchestrator `PACEViolationNotice` uses, so contract, notice and
+  notification share one vocabulary. The paper's `"a + b"` string form is
+  accepted.
+- A guardian notification states the agent, the rule, what happened in
+  plain words, both clocks, the actions taken and the next allowed
+  contact. The guardian story needs all six to act without logs.
+- Guardian notifications carry no capacity data and reject unknown
+  fields (CCC-2).
+- Every violation is reported to the guardian on the policy's say, not
+  `guardian_cc`: `guardian_cc` governs copies of routine interactions.
+  **Belief** that guardians want violations regardless of that setting.
+- An AIC-5 violation defaults to reject and log, without notifying the
+  guardian: it is caught before any contact. **Belief.**
+
 ## Augmentation profile
 
 - ~~An axis kind can change freely and AUG-4 checks actions against the
