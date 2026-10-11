@@ -4,7 +4,7 @@
     "uri": "https://ravikiran438.github.io/sauvidya-pace/v1",
     "name": "Sauvidya PACE Framework",
     "description": "Principal accessibility / capacity / engagement layer for A2A orchestrators.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "publisher": "Ravi Kiran Kadaboina",
     "human_readable_spec": "https://doi.org/10.5281/zenodo.19633138"
   },

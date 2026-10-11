@@ -43,10 +43,11 @@ from mcp.types import (
     Tool,
 )
 
+from pace import __version__
 from pace.mcp_server.tools import HANDLERS, TOOL_SCHEMAS, ToolInvocationError
 
 SERVER_NAME = "pace"
-SERVER_VERSION = "0.1.0"
+SERVER_VERSION = __version__
 SERVER_INSTRUCTIONS = (
     "PACE (Sauvidya, principal accessibility contract) reference "
     "server. Exposes seven Core validators (PCP structural; "

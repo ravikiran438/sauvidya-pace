@@ -7,4 +7,4 @@ version 1 of the PACE protocol extension for A2A and MCP.
 
 - **Paper:** https://doi.org/10.5281/zenodo.19633138
 - **Specification:** See the repository root
-- **Status:** Draft v0.1.0
+- **Status:** Draft v0.2.0

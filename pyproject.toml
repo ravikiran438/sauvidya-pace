@@ -1,6 +1,6 @@
 [project]
 name = "pace"
-version = "0.1.0"
+version = "0.2.0"
 description = "PACE specification, reference types, validators, and TLA+ model for principal accessibility in agent networks"
 readme = "README.md"
 requires-python = ">=3.14"

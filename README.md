@@ -2,7 +2,7 @@
 
 [![CI status](https://github.com/ravikiran438/sauvidya-pace/actions/workflows/ci.yml/badge.svg)](https://github.com/ravikiran438/sauvidya-pace/actions/workflows/ci.yml)
 
-**Status:** Draft 0.1.0 (unreleased changes in [CHANGELOG](CHANGELOG.md))
+**Status:** Draft 0.2.0 ([CHANGELOG](CHANGELOG.md))
 **Paper:** [Sauvidya: An Accessibility Protocol for Agent-to-Principal Interaction in Autonomous Agent Networks](https://doi.org/10.5281/zenodo.19633138)
 **Extension URI:** `https://ravikiran438.github.io/sauvidya-pace/v1`
 **License:** Apache 2.0

@@ -3,7 +3,7 @@
 > Generated from `extensions/augmentation-profile/v1/manifest.json` by `uv run python -m pace.manifest --write`. Do not hand-edit.
 
 - **Extension URI:** `https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1`
-- **Protocol version:** 0.1.0 (draft)
+- **Protocol version:** 0.2.0 (draft)
 - **Manifest envelope version:** 1.0.0
 - **Publisher:** Ravi Kiran Kadaboina
 

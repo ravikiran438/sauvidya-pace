@@ -7,6 +7,8 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-11
+
 ### Added
 
 - `AugmentationProfile` extension
@@ -169,5 +171,6 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
 - Reference MCP server (`pace-mcp`) exposing the validators as tools.
 - Paper: [doi:10.5281/zenodo.19633138](https://doi.org/10.5281/zenodo.19633138).
 
-[Unreleased]: https://github.com/ravikiran438/sauvidya-pace/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ravikiran438/sauvidya-pace/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ravikiran438/sauvidya-pace/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ravikiran438/sauvidya-pace/releases/tag/v0.1.0

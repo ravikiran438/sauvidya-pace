@@ -14,13 +14,13 @@ Requires Python 3.14+. Run directly with `uvx` in an ephemeral
 environment:
 
 ```bash
-uvx --from 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@main' pace-mcp
+uvx --from 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.2.0' pace-mcp
 ```
 
 Or install it as a persistent tool:
 
 ```bash
-uv tool install 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@main'
+uv tool install 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.2.0'
 ```
 
 **For contributors (clone):**
@@ -112,7 +112,7 @@ globally via your VSCode user settings, under the MCP section).
       "command": "uvx",
       "args": [
         "--from",
-        "pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@main",
+        "pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace.git@v0.2.0",
         "pace-mcp"
       ]
     }

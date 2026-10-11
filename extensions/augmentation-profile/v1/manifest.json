@@ -4,7 +4,7 @@
     "uri": "https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1",
     "name": "PACE Augmentation-Profile Extension",
     "description": "Active augmentation actions for principals, with reversibility and identity-preservation guarantees.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "publisher": "Ravi Kiran Kadaboina"
   },
   "agent_card_payload_schema": {

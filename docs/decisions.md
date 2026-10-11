@@ -241,9 +241,13 @@ in this file was not made.
   is `uv_build`.
 - MCP SDK 2.x. Fresh installs of the `[mcp]` extra failed to start under
   1.x decorators once 2.x shipped.
-- Git installs point at `main` until v0.2.0 is tagged: the v0.1.0 tag
-  installs a server that fails on MCP SDK 2.x.
-- The next release is 0.2.0: Unreleased contains wire-breaking changes.
+- Git installs pin a release tag, never `main`, so a client gets the
+  verdicts of a known server version. v0.1.0 fails to start on MCP SDK
+  2.x; install v0.2.0 or later.
+- 0.2.0 is a minor release because it breaks the wire: `timezone` is
+  required and `validate_time_window` takes a zone-aware `at` instead of
+  `current_time_hhmm`. A scenario written for 0.1.0 fails against it,
+  as the a2a-testbed example did (2026-10-11).
 
 ## Reference defaults
 
