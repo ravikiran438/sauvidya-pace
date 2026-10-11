@@ -267,6 +267,20 @@ class TestTimeWindow:
     def test_emergency_overrides(self):
         validate_time_window(_contract(), "19:00", is_emergency=True)
 
+    def test_sundown_block_wraps_past_midnight(self):
+        """Sundown 17:00-08:00 with no valid windows: only the wrap
+        logic can reject 02:00."""
+        contract = AdaptiveInteractionContract(
+            principal_id="p1", pcp_version="v1",
+            interaction_rules=InteractionRules(
+                language="te",
+                sundown_block=TimeWindow(start="17:00", end="08:00"),
+            ),
+        )
+        with pytest.raises(TimeWindowViolationError, match="sundown"):
+            validate_time_window(contract, "02:00")
+        validate_time_window(contract, "08:01")
+
 
 # ─── AIC-2: Option Count ────────────────────────────────────────────
 

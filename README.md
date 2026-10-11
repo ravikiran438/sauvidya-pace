@@ -262,6 +262,17 @@ gets, and it needs no code: the
 [feedback form](https://github.com/ravikiran438/sauvidya-pace/issues/new?template=capability-feedback.yml)
 takes a few minutes. Developers, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Project records
+
+- [CHECKPOINTS.md](CHECKPOINTS.md): what is done, with the numbers, and
+  the gate for what comes next
+- [docs/decisions.md](docs/decisions.md): every rule and the fact behind
+  it, including the ones reversed
+- [docs/perturbations.md](docs/perturbations.md): "say X happens" questions
+  asked of the code, and what they found
+- [docs/consumer.md](docs/consumer.md): the five-minute story for each
+  person PACE serves
+
 ## Citation
 
 ```bibtex
