@@ -12,6 +12,16 @@ from pace.types.adaptive_interaction_contract import (
     AdaptiveInteractionContract,
     TimeWindow,
 )
+from pace.types.interaction_modality import InteractionModality
+
+
+class ModalityContractError(ValueError):
+    """AIC-5: an InteractionModality steps outside the contract it was
+    computed under. ``problems`` lists each violation."""
+
+    def __init__(self, message: str, problems: list[str] | None = None):
+        super().__init__(message)
+        self.problems = list(problems or [])
 
 
 class TimeWindowViolationError(ValueError):
@@ -104,4 +114,82 @@ def validate_option_count(
         raise OptionOverloadError(
             f"AIC-2 violated: {options_presented} options presented to principal "
             f"{contract.principal_id!r}, maximum is {max_opts}"
+        )
+
+
+_DENSITY = {"low": 0, "medium": 1, "high": 2}
+
+
+def validate_modality_contract(
+    modality: InteractionModality,
+    contract: AdaptiveInteractionContract,
+) -> None:
+    """AIC-5: an agent's InteractionModality stays within its contract.
+
+    Each primitive validates on its own; this checks the two together. The
+    plan must be for the contract's principal and PCP version, speak the
+    contract's language, wait at least as long, speak no faster, present
+    no more options, carry no more information per turn, confirm the way
+    the contract says, and recap prior context when the contract asks.
+    Every violation is reported, not only the first.
+    """
+    rules = contract.interaction_rules
+    plan = modality.modality_plan
+    problems: list[str] = []
+
+    if modality.principal_id != contract.principal_id:
+        problems.append(
+            f"modality is for principal {modality.principal_id!r}, contract "
+            f"for {contract.principal_id!r}"
+        )
+    if modality.pcp_version != contract.pcp_version:
+        problems.append(
+            f"modality computed from PCP {modality.pcp_version!r}, contract "
+            f"bound to {contract.pcp_version!r}"
+        )
+    if plan.language != rules.language:
+        problems.append(
+            f"language {plan.language!r}, contract binds {rules.language!r}"
+        )
+    if plan.timeout_seconds < rules.response_timeout_seconds:
+        problems.append(
+            f"waits {plan.timeout_seconds}s for a response, contract requires "
+            f"at least {rules.response_timeout_seconds}s"
+        )
+    if plan.speech_rate > rules.speech_rate:
+        problems.append(
+            f"speech rate {plan.speech_rate}, contract allows at most "
+            f"{rules.speech_rate}"
+        )
+    if plan.max_options > rules.max_options_per_turn:
+        problems.append(
+            f"up to {plan.max_options} options per turn, contract allows "
+            f"{rules.max_options_per_turn}"
+        )
+    plan_density = _DENSITY.get(plan.information_density)
+    rule_density = _DENSITY.get(rules.information_density)
+    if plan_density is None or rule_density is None:
+        problems.append(
+            f"information density must be one of {sorted(_DENSITY)}, got "
+            f"{plan.information_density!r} and {rules.information_density!r}"
+        )
+    elif plan_density > rule_density:
+        problems.append(
+            f"information density {plan.information_density!r}, contract "
+            f"allows {rules.information_density!r}"
+        )
+    if plan.confirmation_style != rules.confirmation_style:
+        problems.append(
+            f"confirmation style {plan.confirmation_style!r}, contract "
+            f"requires {rules.confirmation_style!r}"
+        )
+    if rules.memory_aid and not plan.memory_aid:
+        problems.append("no memory recap, contract requires one each interaction")
+
+    if problems:
+        raise ModalityContractError(
+            f"AIC-5 violated: InteractionModality of agent "
+            f"{modality.agent_id!r} for {modality.principal_id!r} steps "
+            "outside its contract: " + "; ".join(problems),
+            problems,
         )

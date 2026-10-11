@@ -22,8 +22,10 @@ from pace.validators.capacity import (
 )
 from pace.validators.contract import (
     principal_local_time,
+    validate_modality_contract,
     validate_time_window,
     validate_option_count,
+    ModalityContractError,
     TimeWindowViolationError,
     OptionOverloadError,
 )
@@ -43,6 +45,8 @@ __all__ = [
     "validate_relay_consent",
     "RelayConsentError",
     "principal_local_time",
+    "validate_modality_contract",
+    "ModalityContractError",
     "validate_time_window",
     "validate_option_count",
     "TimeWindowViolationError",

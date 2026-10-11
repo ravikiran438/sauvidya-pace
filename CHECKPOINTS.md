@@ -28,10 +28,11 @@ a Telugu-pinned principal is rejected, with the next step named.
 - **Perturbation round 1:** 18 questions — 8 bug · 4 gap · 2 ok · 4 open.
   See [docs/perturbations.md](docs/perturbations.md).
 
-**Gate for CP2:** how many contract and modality fields have no reader?
-**12 of 18** today. CP2 is justified until that is 0, or each remaining
-field is documented as an instruction to the agent with a test that a
-modality honors it.
+**Gate for CP2:** how many contract fields have no reader? Measured by
+`uv run python scripts/contract-readers.py`: **13 of 20** at CP1 (first
+reported as 12 of 18, a hand-count error). CP2 is justified until that is
+0, or each remaining field is documented as an instruction to the agent
+with a test that a modality honors it.
 
 ## CP2 — The contract is honored end to end (pending)
 
@@ -41,8 +42,9 @@ violation reaches the guardian with enough to act on.
 
 - ✅ Time zone on the contract; windows evaluated in the principal's
   zone (perturbation 16).
-- A contract test: InteractionModality vs AdaptiveInteractionContract
-  (timeout, speech rate, option count, confirmation style, language).
+- ✅ A contract test: InteractionModality vs AdaptiveInteractionContract
+  (AIC-5: language, timeout, speech rate, options, information density,
+  confirmation style, memory recap). Unread fields: 13 → 8 of 20.
 - A guardian notification payload behind `notify_guardian`
   (perturbation 18), readable without converting time zones.
 - A decided counting unit for `max_interactions_per_day`.

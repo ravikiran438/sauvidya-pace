@@ -27,10 +27,10 @@ unobservable, now has a signal) · **ok** (handled, with the reason) ·
 | 14 | The sundown block crosses midnight (17:00–08:00) | `_in_window` wraps correctly | **ok**: only the 19:00 side was tested; added `test_sundown_block_wraps_past_midnight` (02:00 blocked, 08:01 allowed) |
 | 15 | TLC reports a different search depth on two runs (17, 18) | Parallel workers make reported depth approximate; state counts match | **ok**: depth is not published |
 | 16 | The agent runs in a US data center; the principal is in Hyderabad | `validate_time_window` took a bare `HH:MM`; neither `TimeWindow` nor the AIC had a time zone. 08:30 CDT is 19:00 IST, inside her sundown block | **bug**, fixed in CP2: required `timezone` on the contract; windows evaluated in her local time |
-| 17 | An agent's InteractionModality sets a 60 s timeout under a contract that says 300 s | Passes every check: 12 of 18 contract and modality fields have no reader | **open → CP2**: contract-to-modality test |
+| 17 | An agent's InteractionModality sets a 60 s timeout under a contract that says 300 s | Passed every check: 13 of 20 contract fields had no reader | **bug**, fixed in CP2: AIC-5 `validate_modality_contract` checks the plan against its contract |
 | 18 | A violation triggers `notify_guardian` | It is a string; no notification payload exists | **open → CP2**: define the notification |
 
-Round 1: 9 bug · 4 gap · 2 ok · 3 open (perturbation 16 was open, fixed in CP2).
+Round 1: 10 bug · 4 gap · 2 ok · 2 open (perturbations 16 and 17 were open, fixed in CP2).
 
 ## Round 2 — during CP2 (2026-10-10)
 
@@ -40,6 +40,8 @@ Round 1: 9 bug · 4 gap · 2 ok · 3 open (perturbation 16 was open, fixed in CP
 | 20 | An agent in Chicago keeps the same 21:30 schedule across the US daylight-saving change (India has none) | Her local time moves from 08:00 to 09:00; the first is blocked, the second allowed | **ok**: conversion uses the zone database; `test_same_wall_clock_across_us_dst_change` |
 | 21 | An agent passes a time with no zone | Rejected: a naive time cannot say whose clock it came from | **ok**: `test_naive_timestamp_rejected` |
 | 22 | A guardian enters "Asia/Hyderabad" as her time zone | Rejected at construction: not an IANA zone (Hyderabad uses `Asia/Kolkata`) | **ok**: `test_unknown_timezone_rejected` |
+| 23 | An agent ships with `ModalityPlan` defaults (60 s, rate 1.0, 5 options, no recap) | AIC-5 reports all six violations at once, as data (`problems`) | **ok**: `test_default_plan_reports_every_violation` |
+| 24 | I count unread contract fields by hand for the CP2 gate | I reported 12 of 18; the grep output I was reading showed 13 | **bug** (in the record), fixed: `scripts/contract-readers.py` measures it |
 
 ## Candidates
 

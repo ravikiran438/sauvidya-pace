@@ -49,6 +49,7 @@ from pace.validators import (
     ModalityPreconditionError,
     OptionOverloadError,
     TimeWindowViolationError,
+    ModalityContractError,
     validate_ccc_gate,
     validate_ccc_privacy,
     validate_contract_language,
@@ -57,6 +58,7 @@ from pace.validators import (
     validate_relay_consent,
     validate_option_count,
     validate_time_window,
+    validate_modality_contract,
     principal_local_time,
 )
 
@@ -268,6 +270,24 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 "options_presented": {"type": "integer"},
             },
             "required": ["contract", "options_presented"],
+        },
+    },
+    "validate_modality_contract": {
+        "description": (
+            "AIC-5: verify that an InteractionModality stays within the "
+            "AdaptiveInteractionContract it was computed under: same "
+            "principal and PCP version, the contract's language, a timeout "
+            "at least as long, speech no faster, no more options, no denser "
+            "information, the required confirmation style and memory recap. "
+            "Reports every violation."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "modality": {"type": "object"},
+                "contract": {"type": "object"},
+            },
+            "required": ["modality", "contract"],
         },
     },
     # ── augmentation_profile extension (AUG-1, AUG-3..AUG-6) ───────────────
@@ -615,6 +635,20 @@ def handle_validate_option_count(arguments: dict[str, Any]) -> str:
     return _ok({"options_presented": count})
 
 
+def handle_validate_modality_contract(arguments: dict[str, Any]) -> str:
+    modality = _parse(
+        InteractionModality, arguments.get("modality"), "modality"
+    )
+    contract = _parse(
+        AdaptiveInteractionContract, arguments.get("contract"), "contract"
+    )
+    try:
+        validate_modality_contract(modality, contract)
+    except ModalityContractError as exc:
+        return _fail(str(exc))
+    return _ok({"modality": "within-contract"})
+
+
 # ── augmentation_profile extension handlers (AUG-1, AUG-3..AUG-6) ──
 
 
@@ -831,6 +865,7 @@ HANDLERS: dict[str, Any] = {
     "validate_ccc_privacy": handle_validate_ccc_privacy,
     "validate_time_window": handle_validate_time_window,
     "validate_option_count": handle_validate_option_count,
+    "validate_modality_contract": handle_validate_modality_contract,
     # augmentation_profile extension
     "validate_reversibility": handle_validate_reversibility,
     "validate_identity_preservation": handle_validate_identity_preservation,

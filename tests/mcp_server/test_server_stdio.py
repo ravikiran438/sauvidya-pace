@@ -54,6 +54,7 @@ async def test_server_lists_tools_over_stdio():
         "validate_ccc_privacy",
         "validate_time_window",
         "validate_option_count",
+        "validate_modality_contract",
         # augmentation_profile extension
         "validate_reversibility",
         "validate_identity_preservation",

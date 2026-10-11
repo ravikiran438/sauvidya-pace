@@ -336,6 +336,69 @@ class TestTimeZones:
         assert "2026-10-10T08:30-05:00 on the agent's clock" in str(err.value)
 
 
+# ─── AIC-5: Modality honors its contract ────────────────────────────
+
+def _compliant_modality(**plan_overrides):
+    plan = dict(
+        primary_channel=PrimaryChannel.VOICE, language="te", speech_rate=0.7,
+        information_density="low", max_options=2,
+        confirmation_style="voice_repeat_back", memory_aid=True,
+        timeout_seconds=300,
+    )
+    plan.update(plan_overrides)
+    return InteractionModality(
+        agent_id="a1", principal_id="p1", pcp_version="v1",
+        modality_plan=ModalityPlan(**plan),
+    )
+
+
+class TestModalityContract:
+    def test_paper_modality_within_contract(self):
+        validate_modality_contract(_compliant_modality(), _contract())
+
+    def test_short_timeout_rejected(self):
+        """Perturbation 17: a 60 s wait under a 300 s contract."""
+        with pytest.raises(ModalityContractError, match="waits 60s"):
+            validate_modality_contract(_compliant_modality(timeout_seconds=60), _contract())
+
+    def test_longer_timeout_and_slower_speech_allowed(self):
+        validate_modality_contract(
+            _compliant_modality(timeout_seconds=600, speech_rate=0.5), _contract()
+        )
+
+    @pytest.mark.parametrize(
+        "override, phrase",
+        [
+            ({"speech_rate": 1.0}, "speech rate 1.0"),
+            ({"max_options": 5}, "up to 5 options"),
+            ({"information_density": "high"}, "information density 'high'"),
+            ({"confirmation_style": "none"}, "confirmation style 'none'"),
+            ({"memory_aid": False}, "no memory recap"),
+            ({"language": "en"}, "language 'en'"),
+            ({"information_density": "dense"}, "must be one of"),
+        ],
+    )
+    def test_each_dimension_enforced(self, override, phrase):
+        with pytest.raises(ModalityContractError, match=phrase):
+            validate_modality_contract(_compliant_modality(**override), _contract())
+
+    def test_default_plan_reports_every_violation(self):
+        """ModalityPlan defaults suit nobody in particular; against a
+        default contract every dimension is reported at once."""
+        plan = InteractionModality(
+            agent_id="a1", principal_id="p1", pcp_version="v1",
+            modality_plan=ModalityPlan(primary_channel=PrimaryChannel.VOICE, language="te"),
+        )
+        with pytest.raises(ModalityContractError) as err:
+            validate_modality_contract(plan, _contract())
+        assert len(err.value.problems) == 6
+
+    def test_wrong_principal_or_pcp_version(self):
+        stale = _compliant_modality().model_copy(update={"pcp_version": "v0"})
+        with pytest.raises(ModalityContractError, match="PCP 'v0'"):
+            validate_modality_contract(stale, _contract())
+
+
 # ─── AIC-2: Option Count ────────────────────────────────────────────
 
 class TestOptionCount:

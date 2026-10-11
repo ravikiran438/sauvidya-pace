@@ -1,7 +1,7 @@
 # PACE MCP Server
 
 A reference [Model Context Protocol](https://modelcontextprotocol.io/)
-server that exposes PACE's validators as 20 MCP tools: the core
+server that exposes PACE's validators as 21 MCP tools: the core
 accessibility invariants, the wire primitives, and the
 augmentation-profile extension. Uses stdio transport. Works with any MCP-compatible
 client; see the VSCode section below for one concrete configuration.
@@ -65,8 +65,9 @@ as a subprocess.
 | `validate_ccc_gate` | CCC-1 | Principals with fluctuating, limited or guardian-required capacity have a passing ConsentCapacityCheck before consent. |
 | `validate_ccc_privacy` | CCC-2 | No private ConsentCapacityCheck field is transmitted downstream. |
 | `validate_relay_consent` | CCC-4 | Consent reached through a guardian relay carries a capacity check of the principal. |
-| `validate_time_window` | AIC-1 | The current time is inside the contract's interaction windows (emergencies excepted). |
+| `validate_time_window` | AIC-1 | A moment is inside the principal's interaction windows, in her time zone (emergencies excepted). |
 | `validate_option_count` | AIC-2 | The number of options presented stays within the contract's cap. |
+| `validate_modality_contract` | AIC-5 | An InteractionModality stays within its contract: language, timeout, speech rate, options, density, confirmation, recap. |
 
 **Wire primitives**
 

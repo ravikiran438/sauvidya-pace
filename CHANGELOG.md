@@ -42,6 +42,12 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
 - `scripts/check-models.sh`: runs all TLC configs, reachability
   witnesses (`AugmentationProfileWitness.tla`) and mutants that TLC must
   catch, with a pinned, checksum-verified `tla2tools.jar`.
+- AIC-5 `validate_modality_contract`: an InteractionModality must stay
+  within its contract (language, timeout, speech rate, options,
+  information density, confirmation style, memory recap), reporting every
+  violation. MCP tool `validate_modality_contract`.
+- `scripts/contract-readers.py`: counts contract fields that no validator,
+  binding or tool reads.
 - `InteractionRules.min_language_fluency` (default 0.7, guardian
   configurable) and `acceptable_languages()`, which implement the IM-2
   language rule.

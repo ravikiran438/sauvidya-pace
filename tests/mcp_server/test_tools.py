@@ -26,6 +26,7 @@ from pace.mcp_server.tools import (
     handle_validate_contract_language,
     handle_validate_relay_consent,
     handle_validate_option_count,
+    handle_validate_modality_contract,
     handle_validate_principal_capability_profile,
     handle_validate_reversibility,
     handle_validate_skill_maintenance,
@@ -622,3 +623,24 @@ def test_relay_consent_requires_principal_ccc():
         handle_validate_relay_consent({"pcp": _lakshmi_pcp(), "annotation": annotation})
     )
     assert result["ok"] is False and "CCC-4" in result["error"]
+
+
+def test_modality_contract_rejects_short_timeout():
+    modality = {
+        "agent_id": "a1", "principal_id": "p1", "pcp_version": "v1",
+        "modality_plan": {
+            "primary_channel": "voice", "language": "te", "speech_rate": 0.7,
+            "information_density": "low", "max_options": 2,
+            "confirmation_style": "voice_repeat_back", "memory_aid": True,
+            "timeout_seconds": 60,
+        },
+    }
+    result = json.loads(
+        handle_validate_modality_contract({"modality": modality, "contract": _contract()})
+    )
+    assert result["ok"] is False and "AIC-5" in result["error"]
+    modality["modality_plan"]["timeout_seconds"] = 300
+    result = json.loads(
+        handle_validate_modality_contract({"modality": modality, "contract": _contract()})
+    )
+    assert result["ok"] is True

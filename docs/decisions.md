@@ -76,6 +76,22 @@ in this file was not made.
   to her; a UTC day would reset at 05:30 her time. Decided 2026-10-10;
   enforcement in CP2.
 
+## The contract and the agent's plan
+
+- AIC-5: an InteractionModality stays within the contract it was computed
+  under. Each primitive validated alone; a 60 s plan under a 300 s
+  contract passed every check (perturbation 17).
+- The checks are one-directional: an agent may wait longer, speak slower,
+  offer fewer options and carry less information than the contract
+  allows, never more. Language and confirmation style must match. A
+  recap is required when the contract asks for one. **Belief** that every
+  dimension is monotone this way; per-person feedback may show otherwise.
+- AIC-5 reports every violation at once, as data (`problems`), so an agent
+  developer fixes the plan in one pass.
+- The CP2 gate is measured by `scripts/contract-readers.py`, a text search
+  over the reader modules. It can over-count readers (a name used for
+  something else), never under-count. A hand count was off by one.
+
 ## Augmentation profile
 
 - ~~An axis kind can change freely and AUG-4 checks actions against the

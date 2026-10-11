@@ -550,6 +550,7 @@
     "AIC-2: no more than max_options_per_turn options in a single turn.",
     "AIC-3: after a response timeout, no immediate retry; escalate after non_response_policy.escalate_after non-responses.",
     "AIC-4: contract violations trigger the declared violation_policy; cross-orchestrator blocks travel as signed PACEViolationNotice records.",
+    "AIC-5: an InteractionModality stays within the contract it was computed under: the contract's language, a timeout at least as long, speech no faster, no more options, no denser information, the required confirmation style and memory recap.",
     "V-1: a receiver bound by the same aic_version for the principal MUST block offending_agent_id for at least block_duration_seconds.",
     "V-2: receivers MUST NOT forward a PACEViolationNotice (one-hop broadcast).",
     "V-3: receivers without an AIC for the principal log the notice but MUST NOT apply the block."
