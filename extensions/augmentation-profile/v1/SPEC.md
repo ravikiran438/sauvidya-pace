@@ -21,3 +21,11 @@ This extension declares itself by URI presence and does not constrain the AgentC
 - AUG-4 Skill Maintenance: no agent compensate or amplify action on an axis declared preserve in the profile version the action was taken under; re-declaring an axis governs later actions only.
 - AUG-5 Emergency Boundary: an emergency trigger forces a human handoff; no compensate or amplify action until a human acknowledges it.
 - AUG-6 Task-Scoped Step-Up: only the principal may take an axis back for one task; agents stay off that axis in that task until the task ends or the principal ends the step-up. Passing expires_at only makes a nudge due; it never resumes help.
+
+## Conformance levels
+
+An implementation claims a level by keeping every invariant listed for it and for each level it includes.
+
+| Level | Applies to | Includes | Invariants |
+|---|---|---|---|
+| PACE Augmentation | An agent that compensates for or amplifies a capability on the principal's behalf, under her AugmentationProfile. | PACE Agent | AUG-1, AUG-2, AUG-3, AUG-4, AUG-5, AUG-6 |

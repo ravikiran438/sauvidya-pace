@@ -113,6 +113,20 @@ in this file was not made.
   names exists in the code. AIC-3 was missing from the code since the first commit (April 2026), and no
   reader search could see it.
 
+## Conformance levels
+
+- Three levels: PACE Agent (anything that contacts her), PACE
+  Orchestrator (her own agent, holds the profile and contract) and PACE
+  Augmentation. Orchestrator and Augmentation include Agent, because her
+  orchestrator talks to her too. **Belief** that three levels are enough
+  for a newcomer to find their rules in a minute.
+- Each invariant has one owning level, except AIC-1: an agent keeps her
+  time windows; only the orchestrator sees every agent, so it keeps the
+  daily count. Enforced by `test_only_aic_1_is_split_across_levels`.
+- Levels live in the manifests under `conformance`, an extra key the
+  a2a-testbed manifest model ignores; `a2a-testbed validate` still
+  passes the PACE card (2026-10-11).
+
 ## Channels
 
 - One channel vocabulary: `voice`, `text`, `visual`, `haptic`, plus

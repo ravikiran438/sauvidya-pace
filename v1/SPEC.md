@@ -71,3 +71,12 @@ Delivered via `POST` to the URL in `violation_notice_endpoint`. Body schema: the
 - V-1: a receiver bound by the same aic_version for the principal MUST block offending_agent_id for at least block_duration_seconds.
 - V-2: receivers MUST NOT forward a PACEViolationNotice (one-hop broadcast).
 - V-3: receivers without an AIC for the principal log the notice but MUST NOT apply the block.
+
+## Conformance levels
+
+An implementation claims a level by keeping every invariant listed for it and for each level it includes.
+
+| Level | Applies to | Includes | Invariants |
+|---|---|---|---|
+| PACE Agent | Any agent that contacts the principal: reads her PCP copy, talks to her, asks for her consent. | — | PCP-1, IM-1, IM-1 channels, IM-2, CCC-1, CCC-2, CCC-3, AIC-1 (her time windows), AIC-2, AIC-5 |
+| PACE Orchestrator | The principal's own agent: keeps her PCP and contract, counts contacts across agents, relays through the guardian, enforces violations and talks to peer orchestrators. | PACE Agent | PCP-2, PCP-3, CCC-4, AIC-1 (the daily limit, counted across every agent), AIC-3, AIC-4, V-1, V-2, V-3 |

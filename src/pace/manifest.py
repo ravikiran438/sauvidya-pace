@@ -74,6 +74,53 @@ AUGMENTATION_INVARIANTS: tuple[str, ...] = (
 )
 
 
+# Conformance levels. Each invariant is listed under the level that must
+# keep it; a PACE Orchestrator is the principal's own agent, so it also
+# contacts her and includes every PACE Agent invariant.
+CORE_CONFORMANCE: tuple[dict[str, Any], ...] = (
+    {
+        "level": "PACE Agent",
+        "applies_to": "Any agent that contacts the principal: reads her PCP copy, talks to her, asks for her consent.",
+        "includes": [],
+        "invariants": [
+            "PCP-1", "IM-1", "IM-1 channels", "IM-2",
+            "CCC-1", "CCC-2", "CCC-3", "AIC-1", "AIC-2", "AIC-5",
+        ],
+        "notes": {"AIC-1": "her time windows"},
+    },
+    {
+        "level": "PACE Orchestrator",
+        "applies_to": "The principal's own agent: keeps her PCP and contract, counts contacts across agents, relays through the guardian, enforces violations and talks to peer orchestrators.",
+        "includes": ["PACE Agent"],
+        "invariants": [
+            "PCP-2", "PCP-3", "CCC-4", "AIC-1", "AIC-3", "AIC-4", "V-1", "V-2", "V-3",
+        ],
+        "notes": {"AIC-1": "the daily limit, counted across every agent"},
+    },
+)
+
+AUGMENTATION_CONFORMANCE: tuple[dict[str, Any], ...] = (
+    {
+        "level": "PACE Augmentation",
+        "applies_to": "An agent that compensates for or amplifies a capability on the principal's behalf, under her AugmentationProfile.",
+        "includes": ["PACE Agent"],
+        "invariants": ["AUG-1", "AUG-2", "AUG-3", "AUG-4", "AUG-5", "AUG-6"],
+    },
+)
+
+# AIC-1 sits at both levels: an agent keeps her time windows; the
+# orchestrator keeps the daily count, because only it sees every agent.
+
+
+def invariant_id(invariant: str) -> str:
+    """The ID an invariant is cited by: the text before its first colon,
+    without the descriptive name some extensions add (``AUG-1 Reversibility``)."""
+    head = invariant.split(":", 1)[0].strip()
+    if head.startswith("AUG-"):
+        return head.split(" ", 1)[0]
+    return head
+
+
 def _artefact(
     name: str, description: str, endpoint_field: str, method: str, model: type[BaseModel]
 ) -> dict[str, Any]:
@@ -130,6 +177,7 @@ def core_manifest() -> dict[str, Any]:
             ),
         ],
         "invariants": list(CORE_INVARIANTS),
+        "conformance": [dict(level) for level in CORE_CONFORMANCE],
     }
 
 
@@ -156,6 +204,7 @@ def augmentation_manifest() -> dict[str, Any]:
         },
         "wire_artefacts": [],
         "invariants": list(AUGMENTATION_INVARIANTS),
+        "conformance": [dict(level) for level in AUGMENTATION_CONFORMANCE],
     }
 
 
@@ -214,6 +263,25 @@ def render_spec_md(manifest: dict[str, Any], manifest_path: str) -> str:
     lines += ["## Invariants", ""]
     lines += [f"- {inv}" for inv in manifest["invariants"]]
     lines.append("")
+
+    if manifest.get("conformance"):
+        lines += [
+            "## Conformance levels",
+            "",
+            "An implementation claims a level by keeping every invariant listed for it "
+            "and for each level it includes.",
+            "",
+            "| Level | Applies to | Includes | Invariants |",
+            "|---|---|---|---|",
+        ]
+        for level in manifest["conformance"]:
+            includes = ", ".join(level["includes"]) or "—"
+            invariants = ", ".join(
+                f"{i} ({level['notes'][i]})" if i in level.get("notes", {}) else i
+                for i in level["invariants"]
+            )
+            lines.append(f"| {level['level']} | {level['applies_to']} | {includes} | {invariants} |")
+        lines.append("")
     return "\n".join(lines)
 
 

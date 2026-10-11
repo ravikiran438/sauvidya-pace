@@ -92,6 +92,22 @@ one of ['te'], otherwise escalate to the guardian. Do not fall back to 'en'.
 | `PACEViolationNotice` | Signed, one-hop broadcast that blocks an agent across orchestrators after a contract violation. |
 | `GuardianNotification` | What the guardian receives on a violation: the agent, the rule, a plain-language summary, both clocks, the actions taken and when agents may next contact her. No capacity data. |
 
+## Conformance levels
+
+Which rules apply depends on what you are building. The levels are
+declared in both manifests and listed in [`v1/SPEC.md`](v1/SPEC.md).
+
+| Level | You are building | Keeps | MCP tools to call |
+|---|---|---|---|
+| **PACE Agent** | Any agent that contacts the principal | PCP-1, IM-1, IM-2, CCC-1 to CCC-3, AIC-1 time windows, AIC-2, AIC-5 | `validate_im_precondition`, `validate_channels`, `validate_language_match`, `validate_ccc_gate`, `validate_ccc_privacy`, `validate_time_window`, `validate_option_count`, `validate_modality_contract` |
+| **PACE Orchestrator** | The principal's own agent, which holds her profile and contract. Includes PACE Agent. | PCP-2, PCP-3, CCC-4, AIC-1 daily limit across agents, AIC-3, AIC-4, V-1 to V-3 | `validate_principal_capability_profile`, `validate_contract_language`, `validate_relay_consent`, `validate_daily_limit`, `validate_retry`, `enforce_violation` |
+| **PACE Augmentation** | An agent that compensates for or amplifies a capability. Includes PACE Agent. | AUG-1 to AUG-6 | `validate_reversibility`, `validate_identity_preservation`, `validate_skill_maintenance`, `validate_emergency_boundary`, `validate_step_up`, `check_step_up_nudge` |
+
+The wire-primitive tools (`validate_accessibility_service_ref`,
+`validate_active_challenge`, `validate_pace_consent_annotation`,
+`validate_pace_violation_notice`, `compute_ccc_trend`) check messages and
+apply at every level that sends or receives them.
+
 ## Language and relay rules
 
 - **IM-2.** If the profile pins a language (`language:te` in

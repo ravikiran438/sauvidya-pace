@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from pace import __version__
-from pace.manifest import augmentation_manifest, core_manifest, outputs
+from pace.manifest import augmentation_manifest, core_manifest, invariant_id, outputs
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,3 +42,37 @@ def test_on_device_primitives_are_not_wire_artefacts():
     assert names.isdisjoint(
         {"ConsentCapacityCheck", "PACEConsentAnnotation", "ActiveChallenge"}
     )
+
+
+ALL_LEVELS = {
+    level["level"]
+    for build in (core_manifest, augmentation_manifest)
+    for level in build()["conformance"]
+}
+
+
+@pytest.mark.parametrize("build", [core_manifest, augmentation_manifest])
+def test_every_invariant_has_a_conformance_level(build):
+    manifest = build()
+    declared = [invariant_id(inv) for inv in manifest["invariants"]]
+    assert len(declared) == len(set(declared)), "duplicate invariant IDs"
+    assigned = {i for level in manifest["conformance"] for i in level["invariants"]}
+    assert set(declared) == assigned, (
+        f"unassigned: {sorted(set(declared) - assigned)}; unknown: {sorted(assigned - set(declared))}"
+    )
+
+
+@pytest.mark.parametrize("build", [core_manifest, augmentation_manifest])
+def test_conformance_levels_are_well_formed(build):
+    for level in build()["conformance"]:
+        assert set(level["includes"]) <= ALL_LEVELS, level["level"]
+        assert len(level["invariants"]) == len(set(level["invariants"])), level["level"]
+        assert set(level.get("notes", {})) <= set(level["invariants"]), level["level"]
+
+
+def test_only_aic_1_is_split_across_levels():
+    """Each core invariant has one owner, except AIC-1: an agent keeps her
+    windows, the orchestrator keeps the daily count across agents."""
+    agent, orchestrator = core_manifest()["conformance"]
+    assert set(agent["invariants"]) & set(orchestrator["invariants"]) == {"AIC-1"}
+    assert "AIC-1" in agent["notes"] and "AIC-1" in orchestrator["notes"]

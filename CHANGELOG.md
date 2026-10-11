@@ -13,6 +13,10 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   (`https://ravikiran438.github.io/sauvidya-pace/extensions/augmentation-profile/v1`)
   with invariants AUG-1 to AUG-6, Pydantic types, validators, MCP tools
   and a TLA+ model.
+- Conformance levels: PACE Agent, PACE Orchestrator (includes Agent) and
+  PACE Augmentation (includes Agent), declared under `conformance` in
+  both manifests and rendered in each `SPEC.md`. A test fails if an
+  invariant has no level or a level names an unknown invariant.
 - AUG-6 task-scoped step-up: the principal takes one axis back for one
   task with a `StepUpEvent`. Agents stay off that axis in that task
   until the task ends or the principal ends the step-up; passing
