@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from pace.types.adaptive_interaction_contract import (
     AdaptiveInteractionContract,
     TimeWindow,
@@ -24,8 +27,7 @@ def _time_to_minutes(hhmm: str) -> int:
     return int(h) * 60 + int(m)
 
 
-def _in_window(current_hhmm: str, window: TimeWindow) -> bool:
-    current = _time_to_minutes(current_hhmm)
+def _in_window(current: int, window: TimeWindow) -> bool:
     start = _time_to_minutes(window.start)
     end = _time_to_minutes(window.end)
     if start <= end:
@@ -34,40 +36,61 @@ def _in_window(current_hhmm: str, window: TimeWindow) -> bool:
     return current >= start or current <= end
 
 
+def principal_local_time(
+    contract: AdaptiveInteractionContract, at: datetime
+) -> datetime:
+    """``at`` in the principal's time zone. ``at`` must carry its own zone:
+    a naive timestamp cannot say whose clock it was read from."""
+    if at.tzinfo is None or at.utcoffset() is None:
+        raise ValueError(
+            "AIC-1 needs a zone-aware timestamp; a naive time is ambiguous "
+            "between the agent's clock and the principal's"
+        )
+    return at.astimezone(ZoneInfo(contract.interaction_rules.timezone))
+
+
 def validate_time_window(
     contract: AdaptiveInteractionContract,
-    current_time_hhmm: str,
+    at: datetime,
     is_emergency: bool = False,
 ) -> None:
     """AIC-1: No interaction outside valid_time_windows unless emergency.
-    Also checks sundown_block."""
+    Also checks sundown_block.
+
+    Windows are the principal's local times (``interaction_rules.timezone``).
+    ``at`` is converted to that zone first, so an agent in another country,
+    or on the other side of a daylight-saving change, is judged by her clock.
+    """
     if is_emergency:
         return
 
     rules = contract.interaction_rules
+    local = principal_local_time(contract, at)
+    current = local.hour * 60 + local.minute
+    stamp = (
+        f"{local:%H:%M} {rules.timezone} "
+        f"({at.isoformat(timespec='minutes')} on the agent's clock)"
+    )
 
     # Check sundown block first
     if rules.sundown_block is not None:
-        if _in_window(current_time_hhmm, rules.sundown_block):
+        if _in_window(current, rules.sundown_block):
             raise TimeWindowViolationError(
-                f"AIC-1 violated: current time {current_time_hhmm} falls within "
-                f"sundown block ({rules.sundown_block.start}-{rules.sundown_block.end}) "
+                f"AIC-1 violated: {stamp} falls within the sundown block "
+                f"({rules.sundown_block.start}-{rules.sundown_block.end}) "
                 f"for principal {contract.principal_id!r}"
             )
 
     # Check valid time windows
     if rules.valid_time_windows:
-        in_any = any(
-            _in_window(current_time_hhmm, w) for w in rules.valid_time_windows
-        )
+        in_any = any(_in_window(current, w) for w in rules.valid_time_windows)
         if not in_any:
             windows_str = ", ".join(
                 f"{w.start}-{w.end}" for w in rules.valid_time_windows
             )
             raise TimeWindowViolationError(
-                f"AIC-1 violated: current time {current_time_hhmm} is outside "
-                f"all valid windows ({windows_str}) for principal "
-                f"{contract.principal_id!r}"
+                f"AIC-1 violated: {stamp} is outside all valid windows "
+                f"({windows_str}) for principal {contract.principal_id!r}"
             )
 
 

@@ -12,8 +12,9 @@ Invariant AIC-4: Violations trigger violation_policy automatically.
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TimeWindow(BaseModel):
@@ -37,6 +38,15 @@ class InteractionRules(BaseModel):
     max_options_per_turn: int = Field(default=2, gt=0)
     confirmation_style: str = Field(default="voice_repeat_back")
     language: str = Field(..., description="ISO 639-1 code")
+    timezone: str = Field(
+        ...,
+        description=(
+            "IANA time zone of the principal, e.g. 'Asia/Kolkata'. "
+            "valid_time_windows and sundown_block are the principal's local "
+            "times in this zone, whatever clock the agent runs on. If the "
+            "principal travels, the guardian issues a new contract version."
+        ),
+    )
     min_language_fluency: float = Field(
         default=0.7,
         ge=0.0,
@@ -56,6 +66,15 @@ class InteractionRules(BaseModel):
     sundown_block: Optional[TimeWindow] = Field(default=None)
     max_interactions_per_day: int = Field(default=3, gt=0)
     escalation_on_confusion: bool = Field(default=True)
+
+    @field_validator("timezone")
+    @classmethod
+    def _known_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(f"unknown IANA time zone {value!r}") from exc
+        return value
 
 
 class AdaptiveInteractionContract(BaseModel):

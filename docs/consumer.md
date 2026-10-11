@@ -17,8 +17,9 @@ Sundown block 17:00–08:00 IST.
   day. Which would you like, or shall I ask Ravi?"
 - **10:18** She says "the first one". The agent repeats it back. Consent is
   recorded with a capacity check of her.
-- **18:40** Another agent wants to confirm the booking. Nothing happens; it
-  waits for 09:00.
+- **18:40** Another agent, hosted in Texas where it is 08:10 in the
+  morning, wants to confirm the booking. Nothing happens: her contract's
+  windows are in her time zone, so it waits for 09:00 IST.
 - **She never** hears English, gets more than two choices, gets a call
   during sundown, or has her "yes" stand in for a decision she didn't follow.
 

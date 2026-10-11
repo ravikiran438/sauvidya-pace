@@ -79,7 +79,7 @@ one of ['te'], otherwise escalate to the guardian. Do not fall back to 'en'.
 | `PrincipalCapabilityProfile` | On-device declaration of the principal's capabilities across eight dimensions: vision, hearing, motor, cognition, language, literacy, tech fluency, decision capacity. Versions are append-only. |
 | `InteractionModality` | The agent's communication plan, computed from the profile before any contact: channel, language, speech rate, information density, option count, timeout. |
 | `ConsentCapacityCheck` | Before consent, checks whether the principal can meaningfully consent *now*, and recommends proceed, simplify, defer or escalate. Results never leave the device. |
-| `AdaptiveInteractionContract` | Binding rules for every agent serving the principal: time windows, option limits, language floor, retry policy, and what happens on a violation. |
+| `AdaptiveInteractionContract` | Binding rules for every agent serving the principal: time windows in her own time zone, option limits, language floor, retry policy, and what happens on a violation. |
 
 ## Wire primitives
 

@@ -105,6 +105,7 @@ class TestAdaptiveInteractionContract:
             principal_id="p1", pcp_version="v1",
             interaction_rules=InteractionRules(
                 language="te",
+                timezone="Asia/Kolkata",
                 valid_time_windows=[
                     TimeWindow(start="09:00", end="11:00"),
                     TimeWindow(start="14:00", end="16:00"),

@@ -26,11 +26,20 @@ unobservable, now has a signal) · **ok** (handled, with the reason) ·
 | 13 | An emergency while no agent speaks her language | Undefined | **open**: EmergencyRoute is on the roadmap; needs verified jurisdiction numbers |
 | 14 | The sundown block crosses midnight (17:00–08:00) | `_in_window` wraps correctly | **ok**: only the 19:00 side was tested; added `test_sundown_block_wraps_past_midnight` (02:00 blocked, 08:01 allowed) |
 | 15 | TLC reports a different search depth on two runs (17, 18) | Parallel workers make reported depth approximate; state counts match | **ok**: depth is not published |
-| 16 | The agent runs in a US data center; the principal is in Hyderabad | `validate_time_window` takes a bare `HH:MM`; neither `TimeWindow` nor the AIC has a timezone. A US 08:30 is 18:00 in her sundown block | **open → CP2**: needs a timezone on the contract |
+| 16 | The agent runs in a US data center; the principal is in Hyderabad | `validate_time_window` took a bare `HH:MM`; neither `TimeWindow` nor the AIC had a time zone. 08:30 CDT is 19:00 IST, inside her sundown block | **bug**, fixed in CP2: required `timezone` on the contract; windows evaluated in her local time |
 | 17 | An agent's InteractionModality sets a 60 s timeout under a contract that says 300 s | Passes every check: 12 of 18 contract and modality fields have no reader | **open → CP2**: contract-to-modality test |
 | 18 | A violation triggers `notify_guardian` | It is a string; no notification payload exists | **open → CP2**: define the notification |
 
-Round 1: 8 bug · 4 gap · 2 ok · 4 open.
+Round 1: 9 bug · 4 gap · 2 ok · 3 open (perturbation 16 was open, fixed in CP2).
+
+## Round 2 — during CP2 (2026-10-10)
+
+| # | Say X happens… | What the system did | Result |
+|---|---|---|---|
+| 19 | An MCP client reads the `validate_time_window` tool description | It promised a time "in the contract's declared timezone"; the contract had none | **bug**, fixed: the tool takes a timestamp with a UTC offset |
+| 20 | An agent in Chicago keeps the same 21:30 schedule across the US daylight-saving change (India has none) | Her local time moves from 08:00 to 09:00; the first is blocked, the second allowed | **ok**: conversion uses the zone database; `test_same_wall_clock_across_us_dst_change` |
+| 21 | An agent passes a time with no zone | Rejected: a naive time cannot say whose clock it came from | **ok**: `test_naive_timestamp_rejected` |
+| 22 | A guardian enters "Asia/Hyderabad" as her time zone | Rejected at construction: not an IANA zone (Hyderabad uses `Asia/Kolkata`) | **ok**: `test_unknown_timezone_rejected` |
 
 ## Candidates
 

@@ -84,6 +84,7 @@ def _contract(lang: str = "te") -> dict:
         "pcp_version": "v1",
         "interaction_rules": {
             "language": lang,
+            "timezone": "Asia/Kolkata",
             "valid_time_windows": [
                 {"start": "09:00", "end": "11:00"},
                 {"start": "14:00", "end": "16:00"},
@@ -275,7 +276,7 @@ def test_ccc_privacy_non_string_list_raises():
 def test_time_window_morning_ok():
     result = json.loads(
         handle_validate_time_window(
-            {"contract": _contract(), "current_time_hhmm": "10:00"}
+            {"contract": _contract(), "at": "2026-10-10T10:00:00+05:30"}
         )
     )
     assert result["ok"] is True
@@ -284,7 +285,7 @@ def test_time_window_morning_ok():
 def test_time_window_sundown_fails():
     result = json.loads(
         handle_validate_time_window(
-            {"contract": _contract(), "current_time_hhmm": "19:00"}
+            {"contract": _contract(), "at": "2026-10-10T08:30:00-05:00"}
         )
     )
     assert result["ok"] is False
@@ -296,7 +297,7 @@ def test_time_window_emergency_overrides():
         handle_validate_time_window(
             {
                 "contract": _contract(),
-                "current_time_hhmm": "19:00",
+                "at": "2026-10-10T19:00:00+05:30",
                 "is_emergency": True,
             }
         )
@@ -305,10 +306,25 @@ def test_time_window_emergency_overrides():
 
 
 def test_time_window_non_string_time_raises():
-    with pytest.raises(ToolInvocationError, match="must be a string"):
+    with pytest.raises(ToolInvocationError, match="ISO 8601"):
+        handle_validate_time_window({"contract": _contract(), "at": 1000})
+
+
+def test_time_window_requires_utc_offset():
+    with pytest.raises(ToolInvocationError, match="zone-aware"):
         handle_validate_time_window(
-            {"contract": _contract(), "current_time_hhmm": 1000}
+            {"contract": _contract(), "at": "2026-10-10T10:00:00"}
         )
+
+
+def test_time_window_reports_principal_local_time():
+    result = json.loads(
+        handle_validate_time_window(
+            {"contract": _contract(), "at": "2026-10-09T23:30:00-05:00"}
+        )
+    )
+    assert result["ok"] is True
+    assert result["principal_local_time"] == "2026-10-10T10:00+05:30"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -586,7 +602,7 @@ def test_language_match_rejects_english_for_pinned_telugu():
 def test_contract_language_rejects_english_contract():
     contract = {
         "principal_id": "p1", "pcp_version": "v1",
-        "interaction_rules": {"language": "en"},
+        "interaction_rules": {"language": "en", "timezone": "Asia/Kolkata"},
     }
     result = json.loads(
         handle_validate_contract_language({"contract": contract, "pcp": _lakshmi_pcp()})

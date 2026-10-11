@@ -39,8 +39,8 @@ modality honors it.
 computed under, time windows mean the principal's local time, and a
 violation reaches the guardian with enough to act on.
 
-- Time zone on the contract; windows evaluated in the principal's zone
-  (perturbation 16).
+- ✅ Time zone on the contract; windows evaluated in the principal's
+  zone (perturbation 16).
 - A contract test: InteractionModality vs AdaptiveInteractionContract
   (timeout, speech rate, option count, confirmation style, language).
 - A guardian notification payload behind `notify_guardian`

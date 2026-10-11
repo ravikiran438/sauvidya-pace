@@ -59,6 +59,13 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   `ConsentRecord.pace` block to the sibling `PACEConsentAnnotation`,
   referenced by `consent_record_id`. See §4.1 of the paper for the
   migration.
+- **Breaking:** `InteractionRules.timezone` (IANA, required): time
+  windows and the sundown block are the principal's local times.
+  `validate_time_window` takes a zone-aware `datetime` instead of an
+  `HH:MM` string and rejects naive timestamps; the MCP tool takes `at`
+  with a UTC offset and reports the principal's local time. An agent in
+  Texas at 08:30 CDT was judged as 08:30 rather than her 19:00 IST.
+  `tzdata` is required on Windows.
 - **Breaking:** `ActiveChallenge` digests are HMAC-SHA256 under an
   on-device audit key (`hmac-sha256:<hex>`), with a new required
   `digest_key_id`. Plain SHA-256 digests of short responses ("yes",

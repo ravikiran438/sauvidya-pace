@@ -3,6 +3,9 @@
 
 """Tests for PACE validators."""
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import pytest
 from pace.types import *
 from pace.validators import *
@@ -41,6 +44,7 @@ def _contract(lang="te"):
         principal_id="p1", pcp_version="v1",
         interaction_rules=InteractionRules(
             language=lang,
+            timezone="Asia/Kolkata",
             valid_time_windows=[
                 TimeWindow(start="09:00", end="11:00"),
                 TimeWindow(start="14:00", end="16:00"),
@@ -119,7 +123,7 @@ class TestLanguageRule:
             validate_language_match(_modality(lang="en"), pcp)
         lenient = AdaptiveInteractionContract(
             principal_id="p1", pcp_version="v1",
-            interaction_rules=InteractionRules(language="te", min_language_fluency=0.5),
+            interaction_rules=InteractionRules(language="te", timezone="Asia/Kolkata", min_language_fluency=0.5),
         )
         validate_language_match(_modality(lang="en"), pcp, lenient)
 
@@ -147,7 +151,7 @@ class TestLanguageRule:
     def test_contract_cannot_bind_ruled_out_language(self):
         english = AdaptiveInteractionContract(
             principal_id="p1", pcp_version="v1",
-            interaction_rules=InteractionRules(language="en"),
+            interaction_rules=InteractionRules(language="en", timezone="Asia/Kolkata"),
         )
         with pytest.raises(LanguageMismatchError, match="AIC"):
             validate_contract_language(english, _lakshmi())
@@ -249,23 +253,32 @@ class TestCCCPrivacy:
 
 # ─── AIC-1: Time Window ─────────────────────────────────────────────
 
+IST = ZoneInfo("Asia/Kolkata")
+CHICAGO = ZoneInfo("America/Chicago")
+
+
+def _ist(hhmm: str, day: int = 10) -> datetime:
+    h, m = map(int, hhmm.split(":"))
+    return datetime(2026, 10, day, h, m, tzinfo=IST)
+
+
 class TestTimeWindow:
     def test_valid_morning_time(self):
-        validate_time_window(_contract(), "10:00")
+        validate_time_window(_contract(), _ist("10:00"))
 
     def test_valid_afternoon_time(self):
-        validate_time_window(_contract(), "15:00")
+        validate_time_window(_contract(), _ist("15:00"))
 
     def test_sundown_blocked(self):
         with pytest.raises(TimeWindowViolationError, match="AIC-1"):
-            validate_time_window(_contract(), "19:00")
+            validate_time_window(_contract(), _ist("19:00"))
 
     def test_outside_all_windows(self):
         with pytest.raises(TimeWindowViolationError, match="AIC-1"):
-            validate_time_window(_contract(), "12:00")
+            validate_time_window(_contract(), _ist("12:00"))
 
     def test_emergency_overrides(self):
-        validate_time_window(_contract(), "19:00", is_emergency=True)
+        validate_time_window(_contract(), _ist("19:00"), is_emergency=True)
 
     def test_sundown_block_wraps_past_midnight(self):
         """Sundown 17:00-08:00 with no valid windows: only the wrap
@@ -274,12 +287,53 @@ class TestTimeWindow:
             principal_id="p1", pcp_version="v1",
             interaction_rules=InteractionRules(
                 language="te",
+                timezone="Asia/Kolkata",
                 sundown_block=TimeWindow(start="17:00", end="08:00"),
             ),
         )
         with pytest.raises(TimeWindowViolationError, match="sundown"):
-            validate_time_window(contract, "02:00")
-        validate_time_window(contract, "08:01")
+            validate_time_window(contract, _ist("02:00"))
+        validate_time_window(contract, _ist("08:01"))
+
+
+class TestTimeZones:
+    def test_agent_in_texas_is_judged_by_her_clock(self):
+        """Perturbation 16: 08:30 CDT in Texas is 19:00 IST in Hyderabad,
+        inside her sundown block."""
+        texas_morning = datetime(2026, 10, 10, 8, 30, tzinfo=CHICAGO)
+        with pytest.raises(TimeWindowViolationError, match="19:00 Asia/Kolkata"):
+            validate_time_window(_contract(), texas_morning)
+
+    def test_texas_evening_is_her_morning(self):
+        """21:30 CDT is 08:00 IST the next day: still sundown (ends 08:00)."""
+        with pytest.raises(TimeWindowViolationError, match="08:00 Asia/Kolkata"):
+            validate_time_window(_contract(), datetime(2026, 10, 30, 21, 30, tzinfo=CHICAGO))
+
+    def test_same_wall_clock_across_us_dst_change(self):
+        """US DST ends 2026-11-01; India has no DST. The same 21:30 in
+        Chicago is 08:00 IST before the change (blocked) and 09:00 IST
+        after it (inside her 09:00-11:00 window)."""
+        before = datetime(2026, 10, 30, 21, 30, tzinfo=CHICAGO)
+        after = datetime(2026, 11, 2, 21, 30, tzinfo=CHICAGO)
+        assert principal_local_time(_contract(), before).strftime("%H:%M") == "08:00"
+        assert principal_local_time(_contract(), after).strftime("%H:%M") == "09:00"
+        with pytest.raises(TimeWindowViolationError):
+            validate_time_window(_contract(), before)
+        validate_time_window(_contract(), after)
+
+    def test_naive_timestamp_rejected(self):
+        with pytest.raises(ValueError, match="zone-aware"):
+            validate_time_window(_contract(), datetime(2026, 10, 10, 10, 0))
+
+    def test_unknown_timezone_rejected(self):
+        with pytest.raises(ValueError, match="unknown IANA time zone"):
+            InteractionRules(language="te", timezone="Asia/Hyderabad")
+
+    def test_error_shows_both_clocks(self):
+        texas_morning = datetime(2026, 10, 10, 8, 30, tzinfo=CHICAGO)
+        with pytest.raises(TimeWindowViolationError) as err:
+            validate_time_window(_contract(), texas_morning)
+        assert "2026-10-10T08:30-05:00 on the agent's clock" in str(err.value)
 
 
 # ─── AIC-2: Option Count ────────────────────────────────────────────

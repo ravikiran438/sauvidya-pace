@@ -21,6 +21,7 @@ from pace.validators.capacity import (
     RelayConsentError,
 )
 from pace.validators.contract import (
+    principal_local_time,
     validate_time_window,
     validate_option_count,
     TimeWindowViolationError,
@@ -41,6 +42,7 @@ __all__ = [
     "CCCPrivacyError",
     "validate_relay_consent",
     "RelayConsentError",
+    "principal_local_time",
     "validate_time_window",
     "validate_option_count",
     "TimeWindowViolationError",

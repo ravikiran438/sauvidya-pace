@@ -59,6 +59,23 @@ in this file was not made.
 - Only the principal may step up (AUG-6). A guardian stepping her up
   would withhold help on her behalf. **Belief.**
 
+## Time
+
+- The contract carries the principal's IANA time zone
+  (`interaction_rules.timezone`, required); windows and the sundown block
+  are her local times. An agent in Texas at 08:30 CDT was judged as 08:30,
+  not as her 19:00 (perturbation 16).
+- Time checks take a zone-aware timestamp and reject naive ones. A bare
+  `HH:MM` cannot say whose clock it was read from.
+- Daylight saving comes from the IANA zone database. US DST shifts the
+  guardian's clock against hers by an hour twice a year; India has none.
+- `tzdata` is a dependency on Windows only: 2.7 MB installed, and macOS and
+  Linux ship the zone database.
+- `max_interactions_per_day` counts per principal, across all agents, by
+  her local calendar day. Three agents calling once each are three calls
+  to her; a UTC day would reset at 05:30 her time. Decided 2026-10-10;
+  enforcement in CP2.
+
 ## Augmentation profile
 
 - ~~An axis kind can change freely and AUG-4 checks actions against the

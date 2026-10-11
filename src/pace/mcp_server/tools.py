@@ -57,6 +57,7 @@ from pace.validators import (
     validate_relay_consent,
     validate_option_count,
     validate_time_window,
+    principal_local_time,
 )
 
 # augmentation_profile extension (AUG-1..AUG-6).
@@ -233,22 +234,25 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
     },
     "validate_time_window": {
         "description": (
-            "Verify that the current HH:MM time is inside the "
-            "contract's allowed interaction window. Emergency "
-            "invocations bypass the window."
+            "AIC-1: verify that a moment falls inside the principal's "
+            "interaction windows and outside her sundown block, in her "
+            "time zone (interaction_rules.timezone), whatever clock the "
+            "agent runs on. Emergency invocations bypass the window."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "contract": {"type": "object"},
-                "current_time_hhmm": {
+                "at": {
                     "type": "string",
-                    "description": "Current time as 'HH:MM' in the "
-                    "contract's declared timezone.",
+                    "format": "date-time",
+                    "description": "ISO 8601 timestamp WITH a UTC offset, "
+                    "e.g. '2026-10-10T08:30:00-05:00'. Times without an "
+                    "offset are rejected.",
                 },
                 "is_emergency": {"type": "boolean"},
             },
-            "required": ["contract", "current_time_hhmm"],
+            "required": ["contract", "at"],
         },
     },
     "validate_option_count": {
@@ -571,17 +575,30 @@ def handle_validate_time_window(arguments: dict[str, Any]) -> str:
     contract = _parse(
         AdaptiveInteractionContract, arguments.get("contract"), "contract"
     )
-    hhmm = arguments.get("current_time_hhmm")
-    if not isinstance(hhmm, str):
-        raise ToolInvocationError("current_time_hhmm must be a string")
+    raw_at = arguments.get("at")
+    if not isinstance(raw_at, str):
+        raise ToolInvocationError("at must be an ISO 8601 timestamp string")
+    try:
+        at = datetime.fromisoformat(raw_at)
+    except ValueError as exc:
+        raise ToolInvocationError(f"at is not ISO 8601: {exc}") from exc
     is_emergency = arguments.get("is_emergency", False)
     if not isinstance(is_emergency, bool):
         raise ToolInvocationError("is_emergency must be a boolean")
     try:
-        validate_time_window(contract, hhmm, is_emergency=is_emergency)
+        local = principal_local_time(contract, at)
+    except ValueError as exc:
+        raise ToolInvocationError(str(exc)) from exc
+    try:
+        validate_time_window(contract, at, is_emergency=is_emergency)
     except TimeWindowViolationError as exc:
         return _fail(str(exc))
-    return _ok({"time_window": "inside"})
+    return _ok(
+        {
+            "time_window": "inside",
+            "principal_local_time": local.isoformat(timespec="minutes"),
+        }
+    )
 
 
 def handle_validate_option_count(arguments: dict[str, Any]) -> str:

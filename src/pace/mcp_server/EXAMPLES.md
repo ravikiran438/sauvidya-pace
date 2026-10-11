@@ -141,9 +141,10 @@ outside the trust boundary).
 
 ## validate_time_window (AIC-1)
 
-**What it checks:** the current HH:MM is inside the contract's
-allowed interaction windows. Emergency invocations bypass the
-window.
+**What it checks:** a moment falls inside the principal's
+interaction windows, in her time zone, whatever clock the agent runs
+on. The timestamp must carry a UTC offset. Emergency invocations
+bypass the window.
 
 ```json
 {
@@ -152,6 +153,7 @@ window.
     "pcp_version": "v1",
     "interaction_rules": {
       "language": "te",
+      "timezone": "Asia/Kolkata",
       "valid_time_windows": [
         {"start": "09:00", "end": "11:00"},
         {"start": "14:00", "end": "16:00"}
@@ -159,12 +161,13 @@ window.
       "sundown_block": {"start": "17:00", "end": "08:00"}
     }
   },
-  "current_time_hhmm": "10:00"
+  "at": "2026-10-10T10:00:00+05:30"
 }
 ```
 
-**Failure variant:** set `"current_time_hhmm": "19:00"` — inside the
-sundown block. Add `"is_emergency": true` to override.
+**Failure variant:** set `"at": "2026-10-10T08:30:00-05:00"`, a
+morning call from an agent in Texas. That is 19:00 in Hyderabad,
+inside the sundown block. Add `"is_emergency": true` to override.
 
 ---
 
@@ -180,6 +183,7 @@ contract's `max_options_per_turn` (default 2).
     "pcp_version": "v1",
     "interaction_rules": {
       "language": "te",
+      "timezone": "Asia/Kolkata",
       "valid_time_windows": [{"start": "09:00", "end": "11:00"}]
     }
   },
