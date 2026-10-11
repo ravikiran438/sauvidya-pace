@@ -11,10 +11,10 @@ Invariant AIC-4: Violations trigger violation_policy automatically.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from pace.types.violation_notice import EnforcementAction
 
@@ -64,6 +64,38 @@ class ViolationPolicy(BaseModel):
         return value
 
 
+class NonResponsePolicy(BaseModel):
+    """AIC-3: what an agent does when the principal does not answer.
+
+    No retry inside the window of the unanswered attempt; at most
+    ``max_retries`` retries; after ``escalate_after`` non-responses, stop
+    and escalate to the guardian.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    max_retries: int = Field(default=1, ge=0)
+    retry_delay: Literal["next_window"] = Field(
+        default="next_window",
+        description="A retry waits for the next valid time window.",
+    )
+    escalate_after: int = Field(
+        default=2,
+        ge=1,
+        description="Non-responses after which the agent escalates instead of retrying.",
+    )
+
+    @model_validator(mode="after")
+    def _never_silently_dropped(self) -> "NonResponsePolicy":
+        if self.escalate_after > self.max_retries + 1:
+            raise ValueError(
+                f"escalate_after ({self.escalate_after}) exceeds max_retries + 1 "
+                f"({self.max_retries + 1}): the agent would run out of retries "
+                "before escalating, and the principal would be dropped silently"
+            )
+        return self
+
+
 class InteractionRules(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -99,6 +131,7 @@ class InteractionRules(BaseModel):
     sundown_block: Optional[TimeWindow] = Field(default=None)
     max_interactions_per_day: int = Field(default=3, gt=0)
     escalation_on_confusion: bool = Field(default=True)
+    non_response_policy: NonResponsePolicy = Field(default_factory=NonResponsePolicy)
 
     @field_validator("timezone")
     @classmethod

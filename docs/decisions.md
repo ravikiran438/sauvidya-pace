@@ -92,6 +92,21 @@ in this file was not made.
   over the reader modules. It can over-count readers (a name used for
   something else), never under-count. A hand count was off by one.
 
+## Non-response (AIC-3)
+
+- After an unanswered attempt, no retry in the same window; the next try
+  waits for her next valid window, compared on her local calendar day.
+- After `escalate_after` non-responses (default 2) the agent escalates to
+  the guardian instead of trying again. An answer resets the count.
+- `escalate_after` may not exceed `max_retries + 1`, so retries never run
+  out before escalation. Otherwise a principal who doesn't answer is
+  dropped with nobody told (perturbation 30).
+- Defaults `max_retries` 1, `escalate_after` 2 come from the paper.
+  **Belief.**
+- `contract-readers.py` also checks that every contract field the paper
+  names exists in the code. AIC-3 was missing from the code since the first commit (April 2026), and no
+  reader search could see it.
+
 ## Enforcement and the guardian
 
 - Violation policies are lists of the same `EnforcementAction` values the

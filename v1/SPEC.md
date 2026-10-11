@@ -64,7 +64,7 @@ Delivered via `POST` to the URL in `violation_notice_endpoint`. Body schema: the
 - CCC-4: relay carries the question, not the consent: consent reached through a guardian relay requires a ConsentCapacityCheck of the principal that is not guardian_confirmed, unless decision_capacity is guardian_required.
 - AIC-1: no interaction outside valid_time_windows unless classified as emergency. Windows and the sundown block are the principal's local times in interaction_rules.timezone, whatever clock the agent runs on.
 - AIC-2: no more than max_options_per_turn options in a single turn.
-- AIC-3: after a response timeout, no immediate retry; escalate after repeated non-responses. Not yet implemented in this reference (no non_response_policy on the contract).
+- AIC-3: after an unanswered attempt, no retry in the same window (non_response_policy.retry_delay = next_window); after non_response_policy.escalate_after non-responses the agent escalates to the guardian instead of trying again. escalate_after may not exceed max_retries + 1, so a principal is never dropped silently.
 - AIC-4: contract violations trigger the declared violation_policy; notify_guardian sends a GuardianNotification with both clocks and no capacity data, and cross-orchestrator blocks travel as signed PACEViolationNotice records.
 - AIC-5: an InteractionModality stays within the contract it was computed under: the contract's language, a timeout at least as long, speech no faster, no more options, no denser information, the required confirmation style and memory recap.
 - V-1: a receiver bound by the same aic_version for the principal MUST block offending_agent_id for at least block_duration_seconds.

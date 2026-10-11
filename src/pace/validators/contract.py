@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Sequence
 from zoneinfo import ZoneInfo
 
 from pace.types.adaptive_interaction_contract import (
@@ -22,6 +24,10 @@ class ModalityContractError(ValueError):
     def __init__(self, message: str, problems: list[str] | None = None):
         super().__init__(message)
         self.problems = list(problems or [])
+
+
+class RetryViolationError(ValueError):
+    """AIC-3: a retry breaks the contract's non-response policy."""
 
 
 class TimeWindowViolationError(ValueError):
@@ -192,4 +198,61 @@ def validate_modality_contract(
             f"{modality.agent_id!r} for {modality.principal_id!r} steps "
             "outside its contract: " + "; ".join(problems),
             problems,
+        )
+
+
+@dataclass(frozen=True)
+class ContactAttempt:
+    """One earlier attempt to reach the principal for the same request."""
+
+    at: datetime
+    responded: bool
+
+
+def _window_key(contract: AdaptiveInteractionContract, moment: datetime):
+    """(her local date, window start) for the valid window containing
+    ``moment``, or None outside every window."""
+    local = principal_local_time(contract, moment)
+    current = local.hour * 60 + local.minute
+    for window in contract.interaction_rules.valid_time_windows:
+        if _in_window(current, window):
+            return (local.date(), window.start)
+    return None
+
+
+def validate_retry(
+    contract: AdaptiveInteractionContract,
+    prior_attempts: Sequence[ContactAttempt],
+    at: datetime,
+) -> None:
+    """AIC-3: may the agent try again at ``at``, after ``prior_attempts``?
+
+    Counts non-responses since the last answered attempt. Raises if the
+    escalation threshold is reached (escalate instead) or if ``at`` falls
+    in the same window as the last unanswered attempt. Retries cannot run
+    out first: ``NonResponsePolicy`` requires
+    ``escalate_after <= max_retries + 1``.
+    """
+    policy = contract.interaction_rules.non_response_policy
+    unanswered: list[ContactAttempt] = []
+    for attempt in sorted(prior_attempts, key=lambda a: a.at):
+        unanswered = [] if attempt.responded else unanswered + [attempt]
+    if not unanswered:
+        return
+
+    misses = len(unanswered)
+    if misses >= policy.escalate_after:
+        raise RetryViolationError(
+            f"AIC-3 violated: {misses} unanswered attempts to reach "
+            f"{contract.principal_id!r}; escalate to the guardian instead of "
+            f"contacting her again (escalate_after={policy.escalate_after})"
+        )
+    last = unanswered[-1]
+    last_key = _window_key(contract, last.at)
+    if last_key is not None and _window_key(contract, at) == last_key:
+        local = principal_local_time(contract, at)
+        raise RetryViolationError(
+            f"AIC-3 violated: retry at {local:%H:%M} {contract.interaction_rules.timezone} "
+            f"is in the same window ({last_key[1]}) as the unanswered attempt; "
+            "wait for the next valid window"
         )

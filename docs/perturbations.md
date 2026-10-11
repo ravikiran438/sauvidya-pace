@@ -42,11 +42,13 @@ Round 1: 11 bug · 4 gap · 2 ok · 1 open (perturbations 16, 17 and 18 were ope
 | 22 | A guardian enters "Asia/Hyderabad" as her time zone | Rejected at construction: not an IANA zone (Hyderabad uses `Asia/Kolkata`) | **ok**: `test_unknown_timezone_rejected` |
 | 23 | An agent ships with `ModalityPlan` defaults (60 s, rate 1.0, 5 options, no recap) | AIC-5 reports all six violations at once, as data (`problems`) | **ok**: `test_default_plan_reports_every_violation` |
 | 24 | I count unread contract fields by hand for the CP2 gate | I reported 12 of 18; the grep output I was reading showed 13 | **bug** (in the record), fixed: `scripts/contract-readers.py` measures it |
-| 25 | Someone asks whether AIC-1 to AIC-4 are all implemented | AIC-3 (no immediate retry, escalate after repeated non-responses) has no field and no validator: `non_response_policy` from the paper does not exist in the code | **open → C16** |
+| 25 | Someone asks whether AIC-1 to AIC-4 are all implemented | AIC-3 (no immediate retry, escalate after repeated non-responses) had no field and no validator: `non_response_policy` from the paper did not exist in the code | **bug**, fixed in C16: `NonResponsePolicy` and `validate_retry` |
 | 26 | A validator reads the manifest's AIC-3 invariant | It cited `non_response_policy.escalate_after`, a field the code never defined; written from the paper without checking | **bug**, fixed: the manifest says AIC-3 is not yet implemented until C16 |
-| 27 | `contract-readers.py` is asked about a field the paper promises but the code never defined | It only checks fields that exist, so it cannot see a missing one | **gap → C16**: compare the paper's contract fields with the code's |
+| 27 | `contract-readers.py` is asked about a field the paper promises but the code never defined | It only checked fields that exist, so it could not see a missing one | **gap**, fixed in C16: it compares the paper's §3.4 fields with the code; run on the code before C16 it reports the 4 missing AIC-3 fields |
 | 28 | A guardian's notification is built with a capacity signal attached | Rejected: `GuardianNotification` forbids unknown fields | **ok**: `test_notification_cannot_carry_capacity_data` |
 | 29 | A guardian writes the paper's policy form, `"reject_interaction + notify_guardian"` | Parsed into structured actions; an unknown action is rejected | **ok**: `test_paper_string_form_accepted`, `test_unknown_action_rejected` |
+| 30 | A guardian sets `escalate_after: 3` with `max_retries: 1` | The agent would run out of retries after two misses and never escalate: she would be dropped with nobody told | **gap**, fixed: `NonResponsePolicy` requires `escalate_after <= max_retries + 1`; a test walks every valid policy to escalation |
+| 31 | She misses the 10:15 call, then answers at 14:00 | The count resets: an answer ends the run of non-responses | **ok**: `test_an_answer_resets_the_count` |
 
 ## Candidates
 

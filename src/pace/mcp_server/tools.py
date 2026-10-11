@@ -61,6 +61,9 @@ from pace.validators import (
     validate_modality_contract,
     principal_local_time,
     enforce_violation,
+    validate_retry,
+    ContactAttempt,
+    RetryViolationError,
 )
 
 # augmentation_profile extension (AUG-1..AUG-6).
@@ -289,6 +292,33 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 "contract": {"type": "object"},
             },
             "required": ["modality", "contract"],
+        },
+    },
+    "validate_retry": {
+        "description": (
+            "AIC-3: may an agent try to reach the principal again? Rejects "
+            "a retry in the same window as an unanswered attempt, and any "
+            "contact once escalate_after non-responses are reached (escalate "
+            "to the guardian instead). prior_attempts: [{at, responded}]."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "contract": {"type": "object"},
+                "prior_attempts": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "at": {"type": "string", "format": "date-time"},
+                            "responded": {"type": "boolean"},
+                        },
+                        "required": ["at", "responded"],
+                    },
+                },
+                "at": {"type": "string", "format": "date-time"},
+            },
+            "required": ["contract", "prior_attempts", "at"],
         },
     },
     "enforce_violation": {
@@ -677,6 +707,30 @@ def handle_validate_modality_contract(arguments: dict[str, Any]) -> str:
     return _ok({"modality": "within-contract"})
 
 
+def handle_validate_retry(arguments: dict[str, Any]) -> str:
+    contract = _parse(
+        AdaptiveInteractionContract, arguments.get("contract"), "contract"
+    )
+    raw = arguments.get("prior_attempts")
+    if not isinstance(raw, list):
+        raise ToolInvocationError("prior_attempts must be a list of objects")
+    try:
+        prior = [
+            ContactAttempt(datetime.fromisoformat(a["at"]), bool(a["responded"]))
+            for a in raw
+        ]
+        at = datetime.fromisoformat(arguments.get("at"))
+    except (TypeError, KeyError, ValueError) as exc:
+        raise ToolInvocationError(f"bad attempt or timestamp: {exc}") from exc
+    try:
+        validate_retry(contract, prior, at)
+    except RetryViolationError as exc:
+        return _fail(str(exc))
+    except ValueError as exc:
+        raise ToolInvocationError(str(exc)) from exc
+    return _ok({"retry": "allowed"})
+
+
 def handle_enforce_violation(arguments: dict[str, Any]) -> str:
     contract = _parse(
         AdaptiveInteractionContract, arguments.get("contract"), "contract"
@@ -931,6 +985,7 @@ HANDLERS: dict[str, Any] = {
     "validate_time_window": handle_validate_time_window,
     "validate_option_count": handle_validate_option_count,
     "validate_modality_contract": handle_validate_modality_contract,
+    "validate_retry": handle_validate_retry,
     "enforce_violation": handle_enforce_violation,
     # augmentation_profile extension
     "validate_reversibility": handle_validate_reversibility,

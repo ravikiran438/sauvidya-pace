@@ -15,6 +15,7 @@ from pace.types.active_challenge import (
 from pace.types.adaptive_interaction_contract import (
     AdaptiveInteractionContract,
     InteractionRules,
+    NonResponsePolicy,
     TimeWindow,
     ViolationPolicy,
 )
@@ -73,6 +74,7 @@ __all__ = [
     "InteractionRules",
     "LanguageFluency",
     "ModalityPlan",
+    "NonResponsePolicy",
     "PACEConsentAnnotation",
     "PACEViolationNotice",
     "PrimaryChannel",

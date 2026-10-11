@@ -46,6 +46,14 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   within its contract (language, timeout, speech rate, options,
   information density, confirmation style, memory recap), reporting every
   violation. MCP tool `validate_modality_contract`.
+- AIC-3 `NonResponsePolicy` (`max_retries`, `retry_delay: next_window`,
+  `escalate_after`) on the contract, and `validate_retry`: no retry in
+  the window of an unanswered attempt; escalate to the guardian after
+  `escalate_after` non-responses. `escalate_after` may not exceed
+  `max_retries + 1`, so a principal is never dropped silently. MCP tool
+  `validate_retry`.
+- `scripts/contract-readers.py` also reports contract fields the paper
+  names but the code does not define.
 - AIC-4 `enforce_violation`: applies the contract's violation policy and
   returns the actions, whether to broadcast a block, and a
   `GuardianNotification` (plain-language summary, both clocks, actions
@@ -104,8 +112,8 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
 
 ### Fixed
 
-- The manifest's AIC-3 invariant cited `non_response_policy`, a field the
-  code never defined; it now says AIC-3 is not yet implemented.
+- AIC-3 was in the paper and the manifest but not in the code:
+  `non_response_policy` did not exist. Implemented.
 - IM-2 ignored fluency and language pins: `validate_language_match`
   accepted any language listed in the PCP, so the paper's own example (an
   English call to a principal with English at 0.3 and `language:te`

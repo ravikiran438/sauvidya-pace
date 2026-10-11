@@ -28,6 +28,7 @@ from pace.mcp_server.tools import (
     handle_validate_option_count,
     handle_validate_modality_contract,
     handle_enforce_violation,
+    handle_validate_retry,
     handle_validate_principal_capability_profile,
     handle_validate_reversibility,
     handle_validate_skill_maintenance,
@@ -669,4 +670,22 @@ def test_enforce_violation_rejects_unknown_type():
         handle_enforce_violation(
             {"contract": _contract(), "violation_type": "rudeness",
              "agent_id": "a1", "at": "2026-10-10T08:10:00-05:00"}
+        )
+
+
+def test_validate_retry_same_window_rejected():
+    payload = {
+        "contract": _contract(),
+        "prior_attempts": [{"at": "2026-10-10T10:15:00+05:30", "responded": False}],
+        "at": "2026-10-10T10:20:00+05:30",
+    }
+    assert json.loads(handle_validate_retry(payload))["ok"] is False
+    payload["at"] = "2026-10-10T14:00:00+05:30"
+    assert json.loads(handle_validate_retry(payload))["ok"] is True
+
+
+def test_validate_retry_bad_attempt_raises():
+    with pytest.raises(ToolInvocationError, match="bad attempt"):
+        handle_validate_retry(
+            {"contract": _contract(), "prior_attempts": [{"at": "soon"}], "at": "2026-10-10T14:00:00+05:30"}
         )
