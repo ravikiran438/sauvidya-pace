@@ -34,31 +34,34 @@ reported as 12 of 18, a hand-count error). CP2 is justified until that is
 0, or each remaining field is documented as an instruction to the agent
 with a test that a modality honors it.
 
-## CP2 — The contract is honored end to end (pending)
+## CP2 — The contract is honored end to end ✅ (fixture)
 
-**Claim.** An agent's modality cannot quietly violate the contract it was
-computed under, time windows mean the principal's local time, and a
-violation reaches the guardian with enough to act on.
+**Claim.** An agent's plan cannot quietly violate the contract it was
+computed under; time windows and the daily limit mean the principal's
+local time; every contract field has a reader and every field the paper
+names exists or was removed on purpose; a violation reaches the guardian
+with enough to act on.
 
-- ✅ Time zone on the contract; windows evaluated in the principal's
-  zone (perturbation 16).
-- ✅ A contract test: InteractionModality vs AdaptiveInteractionContract
-  (AIC-5: language, timeout, speech rate, options, information density,
-  confirmation style, memory recap). Unread fields: 13 → 8 of 20.
-- ✅ A guardian notification behind `notify_guardian` (perturbation 18),
-  readable without converting time zones. Unread fields: 8 → 4 of 21.
-- ✅ AIC-3: `non_response_policy` with `validate_retry`, and a check that
-  every contract field the paper names exists in the code (perturbations
-  25, 27). Missing paper fields: 4 → 0.
-- ✅ `max_interactions_per_day` enforced per principal across agents, by
-  her local day (C17). Unread fields: 4 → 3 of 22.
-- Remaining unread fields: `guardian_cc`, `escalation_on_confusion`,
-  `fallback_chain`. Cut or park unless a story needs them.
-- A decided counting unit for `max_interactions_per_day`.
-- **Exit:** 0 unread fields; the guardian story in
-  [docs/consumer.md](docs/consumer.md) runs ✅ (fixture).
+- **Sample:** `test_guardian_story_from_consumer_md` produces the guardian
+  story's notification (18:40 IST / 08:10 CDT, next contact 09:00 IST).
+- **Unit:** `uv run pytest` — 256 tests.
+- **e2e:** `pace-mcp` over stdio, 25 tools; a2a-testbed validates the
+  card against the published manifest and rejects the old channel
+  vocabulary.
+- **Contract readers:** `uv run python scripts/contract-readers.py` —
+  0 of 20 fields unread (13 at CP1), 0 paper fields missing (4 before
+  AIC-3), 2 removed on purpose. Runs in CI.
+- **What was built:** time zones (AIC-1), daily limit per principal
+  (AIC-1), non-response policy (AIC-3), enforcement and the guardian
+  notification (AIC-4), plan vs. contract (AIC-5), channels and fallback
+  (IM-1). Cut: `guardian_cc`, `escalation_on_confusion`.
+- **Perturbation round 2:** 18 questions — 6 bug · 4 gap · 8 ok · 0 open.
+  Round 1's last three opens (16–18) closed here.
+- **Fixture, not real surface:** no agent network or guardian app runs
+  these stories yet; that is CP5.
 
-**Gate for CP3:** does PACE beat prompt-level accommodation?
+**Gate for CP3:** does PACE beat prompt-level accommodation on cases a
+prompt cannot see? Measured, not argued, before more protocol is added.
 
 ## CP3 — Baseline: PACE vs. telling the agent (pending)
 

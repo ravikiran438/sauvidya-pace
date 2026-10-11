@@ -161,7 +161,7 @@ invariants, wire primitives and the augmentation extension. See the
 | Property | Statement | How it is checked |
 |---|---|---|
 | PCP-Sovereignty | No remote agent may write or modify a PCP | API shape: the reference implementation has no remote write path. Not model-checked. |
-| IM-Precondition | No interaction without computing InteractionModality from PCP | TLC invariant `IMPrecondition`; validators `validate_im_precondition`, `validate_language_match` |
+| IM-Precondition | No interaction without computing InteractionModality from PCP | TLC invariant `IMPrecondition`; validators `validate_im_precondition`, `validate_language_match`, `validate_channels` |
 | CCC-Gate | No consent without capacity check for fluctuating/limited principals | TLC invariant `CCCGate`; validators `validate_ccc_gate`, `validate_relay_consent` |
 | AIC-Enforcement | Contract violations trigger automatic violation_policy | `enforce_violation` applies the policy; TLC invariant `AICOptionBound` (AIC-2); AIC-1 enforced by the `CreateConsent` action guard; validators `validate_time_window`, `validate_daily_limit`, `validate_option_count`, `validate_retry` (AIC-3), `validate_contract_language`, `validate_modality_contract` (AIC-5) |
 | Privacy-Preservation | CCC results never transmitted to remote agents | Validator `validate_ccc_privacy`; `ActiveChallenge` digests are keyed. Not model-checked. |

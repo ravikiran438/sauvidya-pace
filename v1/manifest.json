@@ -9,6 +9,18 @@
     "human_readable_spec": "https://doi.org/10.5281/zenodo.19633138"
   },
   "agent_card_payload_schema": {
+    "$defs": {
+      "PrimaryChannel": {
+        "enum": [
+          "voice",
+          "text",
+          "visual",
+          "haptic"
+        ],
+        "title": "PrimaryChannel",
+        "type": "string"
+      }
+    },
     "description": "PACE-specific fields contributed to an A2A AgentCard.\n\nValidators detect PACE support by the presence of an entry in\n``capabilities.extensions[]`` whose ``uri`` equals\n``PACE_EXTENSION_URI``. The body of that entry SHOULD deserialize\nto this model.",
     "properties": {
       "version": {
@@ -38,9 +50,9 @@
         "type": "boolean"
       },
       "supported_modalities": {
-        "description": "PrimaryChannel values this agent can drive (e.g. ['voice', 'large_text', 'simple_visual']). Validators cross-check this against InteractionModality.modality_plan.primary_channel.",
+        "description": "PrimaryChannel values this agent can drive (e.g. ['voice', 'text']). validate_channels checks every channel of an InteractionModality, primary and fallback, against this list.",
         "items": {
-          "type": "string"
+          "$ref": "#/$defs/PrimaryChannel"
         },
         "minItems": 1,
         "title": "Supported Modalities",
@@ -304,12 +316,6 @@
                 "title": "Memory Aid",
                 "type": "boolean"
               },
-              "guardian_cc": {
-                "default": "always",
-                "description": "always | threshold | never",
-                "title": "Guardian Cc",
-                "type": "string"
-              },
               "valid_time_windows": {
                 "items": {
                   "$ref": "#/$defs/TimeWindow"
@@ -333,11 +339,6 @@
                 "exclusiveMinimum": 0,
                 "title": "Max Interactions Per Day",
                 "type": "integer"
-              },
-              "escalation_on_confusion": {
-                "default": true,
-                "title": "Escalation On Confusion",
-                "type": "boolean"
               },
               "non_response_policy": {
                 "$ref": "#/$defs/NonResponsePolicy"
@@ -742,6 +743,7 @@
     "PCP-2: PCP versions are immutable and append-only; corrections are new versions.",
     "PCP-3: a guardian declaring a PCP MUST be verifiably identified.",
     "IM-1: an InteractionModality MUST be computed from the PCP before any interaction; an agent that cannot satisfy adaptations_required MUST escalate instead.",
+    "IM-1 channels: every channel a modality may use, primary and fallback, must reach the principal (no voice if she cannot hear, no text if she cannot see or read), be supported by the agent, and the fallback chain must end in guardian_relay or name an escalation target.",
     "IM-2: an agent MUST use a language the PCP pins (adaptations_required language:<code>) or, without a pin, one listed at or above the AIC's min_language_fluency; otherwise it routes to a capable sub-agent or escalates, and never falls back to another language. An AIC MUST NOT bind a language the PCP rules out.",
     "CCC-1: a ConsentCapacityCheck MUST precede any consent record for principals whose decision_capacity is fluctuating, limited, or guardian_required.",
     "CCC-2: ConsentCapacityCheck results MUST NOT be transmitted to any remote agent.",

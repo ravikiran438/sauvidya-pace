@@ -20,7 +20,7 @@ Principal accessibility / capacity / engagement layer for A2A orchestrators.
 | `guardian_escalation_endpoint` | string or null | no | HTTPS URL the agent uses to escalate to a registered guardian. REQUIRED when the agent serves principals whose PCP indicates guardian_required decision_capacity. |
 | `pcp_endpoint` | string | yes | HTTPS URL where this agent exchanges PrincipalCapabilityProfile (PCP) metadata with the principal's PACE orchestrator. The endpoint MUST authenticate the orchestrator; PCPs are never fetched by remote A2A agents. |
 | `supported_languages` | array<string> | yes | ISO 639-1 codes this agent can converse in. Used to fail fast when an AIC requires a language the agent cannot speak. |
-| `supported_modalities` | array<string> | yes | PrimaryChannel values this agent can drive (e.g. ['voice', 'large_text', 'simple_visual']). Validators cross-check this against InteractionModality.modality_plan.primary_channel. |
+| `supported_modalities` | array<PrimaryChannel> | yes | PrimaryChannel values this agent can drive (e.g. ['voice', 'text']). validate_channels checks every channel of an InteractionModality, primary and fallback, against this list. |
 | `supports_active_assessment` | boolean | no | True if this agent implements active ConsentCapacityCheck (challenge-response). False means it falls back to passive interpolation only. |
 | `version` | string | yes | PACE protocol semver this agent implements. |
 | `violation_notice_endpoint` | string | yes | HTTPS URL where peer orchestrators POST PACEViolationNotice messages targeting this agent. REQUIRED so the violation broadcast loop has a destination per orchestrator. |
@@ -57,6 +57,7 @@ Delivered via `POST` to the URL in `violation_notice_endpoint`. Body schema: the
 - PCP-2: PCP versions are immutable and append-only; corrections are new versions.
 - PCP-3: a guardian declaring a PCP MUST be verifiably identified.
 - IM-1: an InteractionModality MUST be computed from the PCP before any interaction; an agent that cannot satisfy adaptations_required MUST escalate instead.
+- IM-1 channels: every channel a modality may use, primary and fallback, must reach the principal (no voice if she cannot hear, no text if she cannot see or read), be supported by the agent, and the fallback chain must end in guardian_relay or name an escalation target.
 - IM-2: an agent MUST use a language the PCP pins (adaptations_required language:<code>) or, without a pin, one listed at or above the AIC's min_language_fluency; otherwise it routes to a capable sub-agent or escalates, and never falls back to another language. An AIC MUST NOT bind a language the PCP rules out.
 - CCC-1: a ConsentCapacityCheck MUST precede any consent record for principals whose decision_capacity is fluctuating, limited, or guardian_required.
 - CCC-2: ConsentCapacityCheck results MUST NOT be transmitted to any remote agent.

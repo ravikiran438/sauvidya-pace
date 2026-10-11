@@ -48,6 +48,7 @@ CORE_INVARIANTS: tuple[str, ...] = (
     "PCP-2: PCP versions are immutable and append-only; corrections are new versions.",
     "PCP-3: a guardian declaring a PCP MUST be verifiably identified.",
     "IM-1: an InteractionModality MUST be computed from the PCP before any interaction; an agent that cannot satisfy adaptations_required MUST escalate instead.",
+    "IM-1 channels: every channel a modality may use, primary and fallback, must reach the principal (no voice if she cannot hear, no text if she cannot see or read), be supported by the agent, and the fallback chain must end in guardian_relay or name an escalation target.",
     "IM-2: an agent MUST use a language the PCP pins (adaptations_required language:<code>) or, without a pin, one listed at or above the AIC's min_language_fluency; otherwise it routes to a capable sub-agent or escalates, and never falls back to another language. An AIC MUST NOT bind a language the PCP rules out.",
     "CCC-1: a ConsentCapacityCheck MUST precede any consent record for principals whose decision_capacity is fluctuating, limited, or guardian_required.",
     "CCC-2: ConsentCapacityCheck results MUST NOT be transmitted to any remote agent.",

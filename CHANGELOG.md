@@ -54,6 +54,12 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   `validate_retry`.
 - `scripts/contract-readers.py` also reports contract fields the paper
   names but the code does not define.
+- IM-1 `validate_channels`: every channel of a modality, primary and
+  fallback, must reach the principal (no voice if she cannot hear, no
+  text if she cannot see or read), be supported by the agent, and the
+  chain must end in `guardian_relay` or an escalation target. MCP tool
+  `validate_channels`.
+- CI runs `scripts/contract-readers.py`.
 - AIC-1 daily limit: `validate_daily_limit` and
   `interactions_remaining` count every contact per principal, across all
   agents, by her local calendar day; emergencies are never blocked but
@@ -82,6 +88,12 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   `ConsentRecord.pace` block to the sibling `PACEConsentAnnotation`,
   referenced by `consent_record_id`. See §4.1 of the paper for the
   migration.
+- **Breaking:** `InteractionRules.guardian_cc` and
+  `escalation_on_confusion` removed: no reader and no story needed them.
+- **Breaking:** one channel vocabulary. `FallbackEntry.channel` and
+  `AccessibilityServiceRef.supported_modalities` take `PrimaryChannel`
+  values (`guardian_relay` for fallbacks); `large_text` and
+  `text_large_font` are no longer accepted.
 - **Breaking:** `ViolationPolicy` fields are lists of `EnforcementAction`
   (the `"a + b"` string form is still accepted), with a new
   `on_modality_contract_violation`. `EnforcementAction` gains `log`;

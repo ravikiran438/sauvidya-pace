@@ -6,11 +6,13 @@
 from pace.validators.modality import (
     DEFAULT_MIN_LANGUAGE_FLUENCY,
     acceptable_languages,
+    validate_channels,
     validate_contract_language,
     validate_im_precondition,
     validate_language_match,
     ModalityPreconditionError,
     LanguageMismatchError,
+    ChannelError,
 )
 from pace.validators.capacity import (
     validate_ccc_gate,
@@ -48,6 +50,8 @@ __all__ = [
     "next_window_start",
     "DEFAULT_MIN_LANGUAGE_FLUENCY",
     "acceptable_languages",
+    "validate_channels",
+    "ChannelError",
     "validate_contract_language",
     "validate_im_precondition",
     "validate_language_match",

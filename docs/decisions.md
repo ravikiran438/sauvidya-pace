@@ -113,6 +113,31 @@ in this file was not made.
   names exists in the code. AIC-3 was missing from the code since the first commit (April 2026), and no
   reader search could see it.
 
+## Channels
+
+- One channel vocabulary: `voice`, `text`, `visual`, `haptic`, plus
+  `guardian_relay` as a fallback only. The card said `large_text` and the
+  paper `text_large_font`; nothing could compare them.
+- Every channel a plan may use, primary and fallback, must reach her:
+  no voice if she cannot hear, no text if she cannot see or read, no
+  visual if she cannot see. Only `none` blocks a channel; `low` and
+  `minimal` are adapted, not excluded. **Belief.**
+- A fallback chain ends in `guardian_relay` or the plan names an
+  escalation target, so a failed channel never leaves her unreached.
+
+## Removed from the paper's contract
+
+- ~~`guardian_cc` (always / threshold / never).~~ Removed 2026-10-10: no
+  story needs routine copies to the guardian, and copying every call has
+  privacy weight for her. Violations reach the guardian through the
+  violation policy.
+- ~~`escalation_on_confusion`.~~ Removed 2026-10-10: "confusion" has no
+  definition, and detecting it mid-call would be a capacity judgment
+  outside the capacity check (and close to diagnosis).
+- The principle: a field with no reader is a promise nobody keeps; the
+  cheapest way to keep it is to stop making it. There are more use cases
+  than any protocol can carry.
+
 ## Enforcement and the guardian
 
 - Violation policies are lists of the same `EnforcementAction` values the
@@ -124,9 +149,8 @@ in this file was not made.
   contact. The guardian story needs all six to act without logs.
 - Guardian notifications carry no capacity data and reject unknown
   fields (CCC-2).
-- Every violation is reported to the guardian on the policy's say, not
-  `guardian_cc`: `guardian_cc` governs copies of routine interactions.
-  **Belief** that guardians want violations regardless of that setting.
+- Every violation is reported to the guardian on the policy's say.
+  **Belief** that guardians want violations; `guardian_cc` is removed.
 - An AIC-5 violation defaults to reject and log, without notifying the
   guardian: it is caught before any contact. **Belief.**
 

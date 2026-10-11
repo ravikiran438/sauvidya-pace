@@ -1,7 +1,7 @@
 # PACE MCP Server
 
 A reference [Model Context Protocol](https://modelcontextprotocol.io/)
-server that exposes PACE's validators as 24 MCP tools: the core
+server that exposes PACE's validators as 25 MCP tools: the core
 accessibility invariants, the wire primitives, and the
 augmentation-profile extension. Uses stdio transport. Works with any MCP-compatible
 client; see the VSCode section below for one concrete configuration.
@@ -60,6 +60,7 @@ as a subprocess.
 |---|---|---|
 | `validate_principal_capability_profile` | PCP | Structural check of a PrincipalCapabilityProfile at registration time. |
 | `validate_im_precondition` | IM-1 | An InteractionModality references the current PCP before use. |
+| `validate_channels` | IM-1 | Every channel, primary and fallback, reaches her and is supported by the agent; the chain never dead-ends. |
 | `validate_language_match` | IM-2 | The modality's language is pinned by the PCP or meets the contract's fluency floor; the error names the next step. |
 | `validate_contract_language` | IM-2 | An AdaptiveInteractionContract does not bind a language the PCP rules out. |
 | `validate_ccc_gate` | CCC-1 | Principals with fluctuating, limited or guardian-required capacity have a passing ConsentCapacityCheck before consent. |

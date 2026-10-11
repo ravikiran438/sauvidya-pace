@@ -126,11 +126,9 @@ class InteractionRules(BaseModel):
     speech_rate: float = Field(default=0.7, gt=0.0, le=1.0)
     information_density: str = Field(default="low")
     memory_aid: bool = Field(default=True)
-    guardian_cc: str = Field(default="always", description="always | threshold | never")
     valid_time_windows: List[TimeWindow] = Field(default_factory=list)
     sundown_block: Optional[TimeWindow] = Field(default=None)
     max_interactions_per_day: int = Field(default=3, gt=0)
-    escalation_on_confusion: bool = Field(default=True)
     non_response_policy: NonResponsePolicy = Field(default_factory=NonResponsePolicy)
 
     @field_validator("timezone")

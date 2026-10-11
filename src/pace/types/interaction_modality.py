@@ -10,7 +10,7 @@ Invariant IM-2: Language mismatch MUST NOT default to English.
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -22,9 +22,15 @@ class PrimaryChannel(str, Enum):
     HAPTIC = "haptic"
 
 
+GUARDIAN_RELAY = "guardian_relay"
+
+
 class FallbackEntry(BaseModel):
+    """One step down the fallback ladder. ``channel`` is a PrimaryChannel,
+    or ``guardian_relay`` (a guardian carries the question; CCC-4)."""
+
     model_config = ConfigDict(frozen=True)
-    channel: str
+    channel: Union[PrimaryChannel, Literal["guardian_relay"]]
     condition: str
 
 

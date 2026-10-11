@@ -52,6 +52,8 @@ from pace.validators import (
     ModalityContractError,
     validate_ccc_gate,
     validate_ccc_privacy,
+    validate_channels,
+    ChannelError,
     validate_contract_language,
     validate_im_precondition,
     validate_language_match,
@@ -170,6 +172,25 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 "modality": {"type": "object"},
                 "pcp": {"type": "object"},
                 "contract": {"type": ["object", "null"]},
+            },
+            "required": ["modality", "pcp"],
+        },
+    },
+    "validate_channels": {
+        "description": (
+            "IM-1: every channel an InteractionModality may use, primary and "
+            "fallback, reaches this principal (no voice if she cannot hear, "
+            "no text if she cannot see or read), is supported by the agent "
+            "when its AccessibilityServiceRef is given, and the fallback "
+            "chain cannot dead-end (it ends in guardian_relay or the "
+            "modality names an escalation_target)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "modality": {"type": "object"},
+                "pcp": {"type": "object"},
+                "service_ref": {"type": ["object", "null"]},
             },
             "required": ["modality", "pcp"],
         },
@@ -631,6 +652,21 @@ def handle_validate_language_match(arguments: dict[str, Any]) -> str:
     return _ok({"modality": "language-match"})
 
 
+def handle_validate_channels(arguments: dict[str, Any]) -> str:
+    modality = _parse(
+        InteractionModality, arguments.get("modality"), "modality"
+    )
+    pcp = _parse(PrincipalCapabilityProfile, arguments.get("pcp"), "pcp")
+    service_ref = _parse_optional(
+        AccessibilityServiceRef, arguments.get("service_ref"), "service_ref"
+    )
+    try:
+        validate_channels(modality, pcp, service_ref)
+    except ChannelError as exc:
+        return _fail(str(exc))
+    return _ok({"channels": "reachable"})
+
+
 def handle_validate_contract_language(arguments: dict[str, Any]) -> str:
     contract = _parse(
         AdaptiveInteractionContract, arguments.get("contract"), "contract"
@@ -1035,6 +1071,7 @@ HANDLERS: dict[str, Any] = {
     "validate_principal_capability_profile": handle_validate_principal_capability_profile,
     "validate_im_precondition": handle_validate_im_precondition,
     "validate_language_match": handle_validate_language_match,
+    "validate_channels": handle_validate_channels,
     "validate_contract_language": handle_validate_contract_language,
     "validate_relay_consent": handle_validate_relay_consent,
     "validate_ccc_gate": handle_validate_ccc_gate,

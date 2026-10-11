@@ -56,6 +56,13 @@ PAPER_FIELDS = {
     ],
 }
 
+# Paper fields removed from the code on purpose, with the reason. Recorded
+# in docs/decisions.md; the paper is updated at its next revision.
+REMOVED = {
+    "interaction_rules.guardian_cc": "no story needs routine copies to the guardian; violations reach the guardian through the policy",
+    "interaction_rules.escalation_on_confusion": "'confusion' has no definition; the capacity check covers it",
+}
+
 
 def main() -> int:
     sources = {p: p.read_text(encoding="utf-8") for p in READERS}
@@ -82,8 +89,10 @@ def main() -> int:
         f"{group}.{name}"
         for group, names in PAPER_FIELDS.items()
         for name in names
-        if name not in code[group]
+        if name not in code[group] and f"{group}.{name}" not in REMOVED
     ]
+    for field, reason in REMOVED.items():
+        print(f"REMOVED  {field}  ({reason})")
     for field in missing:
         print(f"MISSING  {field}  (named in the paper, not defined in the code)")
     print(f"{len(missing)} paper contract fields missing from the code")

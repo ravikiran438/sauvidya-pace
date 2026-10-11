@@ -6,8 +6,16 @@
 from __future__ import annotations
 
 from pace.types.adaptive_interaction_contract import AdaptiveInteractionContract
-from pace.types.interaction_modality import InteractionModality
-from pace.types.principal_capability_profile import PrincipalCapabilityProfile
+from pace.types.accessibility_service_ref import AccessibilityServiceRef
+from pace.types.interaction_modality import (
+    GUARDIAN_RELAY,
+    InteractionModality,
+    PrimaryChannel,
+)
+from pace.types.principal_capability_profile import (
+    CapabilityLevel,
+    PrincipalCapabilityProfile,
+)
 
 DEFAULT_MIN_LANGUAGE_FLUENCY = 0.7
 _LANGUAGE_PIN = "language:"
@@ -15,6 +23,11 @@ _LANGUAGE_PIN = "language:"
 
 class ModalityPreconditionError(ValueError):
     """IM-1: Agent attempted interaction without computing InteractionModality."""
+
+
+class ChannelError(ValueError):
+    """IM-1: a channel in the modality is one the principal cannot use, the
+    agent cannot drive, or the fallback chain can dead-end."""
 
 
 class LanguageMismatchError(ValueError):
@@ -129,4 +142,70 @@ def validate_contract_language(
             f"IM-2 violated: AIC for {contract.principal_id!r} binds "
             f"language {language!r}, but {_why(pcp, language, floor)}; "
             f"acceptable languages are {sorted(allowed)!r}"
+        )
+
+
+def _unusable(channel: PrimaryChannel, pcp: PrincipalCapabilityProfile) -> str | None:
+    """Why ``channel`` cannot reach this principal, or None."""
+    none = CapabilityLevel.NONE
+    if channel == PrimaryChannel.VOICE and pcp.hearing == none:
+        return "she cannot hear"
+    if channel == PrimaryChannel.TEXT and pcp.vision == none:
+        return "she cannot see"
+    if channel == PrimaryChannel.TEXT and pcp.literacy == none:
+        return "she cannot read"
+    if channel == PrimaryChannel.VISUAL and pcp.vision == none:
+        return "she cannot see"
+    return None
+
+
+def validate_channels(
+    modality: InteractionModality,
+    pcp: PrincipalCapabilityProfile,
+    service_ref: AccessibilityServiceRef | None = None,
+) -> None:
+    """IM-1: every channel the plan may use reaches this principal.
+
+    Checks the primary channel and each fallback: none may be a channel
+    she cannot use (voice when she cannot hear; text when she cannot see
+    or read; visual when she cannot see). With the agent's
+    ``service_ref``, each must also be a modality the agent supports.
+    ``guardian_relay`` is a fallback only. The chain may not dead-end: it
+    ends in ``guardian_relay`` or the modality names an escalation target,
+    so a failed channel never leaves her silently unreached.
+    """
+    problems: list[str] = []
+    channels = [("primary", modality.modality_plan.primary_channel)]
+    channels += [
+        (f"fallback {i + 1}", entry.channel)
+        for i, entry in enumerate(modality.fallback_chain)
+    ]
+    supported = set(service_ref.supported_modalities) if service_ref else None
+
+    for label, channel in channels:
+        if channel == GUARDIAN_RELAY:
+            continue
+        channel = PrimaryChannel(channel)
+        reason = _unusable(channel, pcp)
+        if reason:
+            problems.append(f"{label} channel {channel.value!r}: {reason}")
+        if supported is not None and channel not in supported:
+            problems.append(
+                f"{label} channel {channel.value!r} is not among the agent's "
+                f"supported modalities {sorted(c.value for c in supported)}"
+            )
+
+    ends_in_relay = bool(modality.fallback_chain) and (
+        modality.fallback_chain[-1].channel == GUARDIAN_RELAY
+    )
+    if not ends_in_relay and not modality.escalation_target:
+        problems.append(
+            "if every channel fails she is left unreached: end the fallback "
+            "chain in guardian_relay or set an escalation_target"
+        )
+
+    if problems:
+        raise ChannelError(
+            f"IM-1 violated: InteractionModality of agent {modality.agent_id!r} "
+            f"for {pcp.principal_id!r}: " + "; ".join(problems)
         )

@@ -22,6 +22,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from pace.types.interaction_modality import PrimaryChannel
+
 
 PACE_EXTENSION_URI = "https://ravikiran438.github.io/sauvidya-pace/v1"
 
@@ -78,13 +80,13 @@ class AccessibilityServiceRef(BaseModel):
         ),
     )
 
-    supported_modalities: List[str] = Field(
+    supported_modalities: List[PrimaryChannel] = Field(
         ...,
         min_length=1,
         description=(
             "PrimaryChannel values this agent can drive (e.g. ['voice', "
-            "'large_text', 'simple_visual']). Validators cross-check this "
-            "against InteractionModality.modality_plan.primary_channel."
+            "'text']). validate_channels checks every channel of an "
+            "InteractionModality, primary and fallback, against this list."
         ),
     )
 

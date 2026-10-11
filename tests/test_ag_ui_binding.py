@@ -34,7 +34,7 @@ def _ref() -> AccessibilityServiceRef:
         pcp_endpoint="https://orch.example.com/pace/pcp",
         aic_endpoint="https://orch.example.com/pace/aic/{principal_id}",
         violation_notice_endpoint="https://orch.example.com/pace/violations",
-        supported_modalities=["voice", "large_text"],
+        supported_modalities=["voice", "text"],
         supported_languages=["en", "te"],
     )
 
@@ -58,7 +58,7 @@ def test_envelope_snapshot_keyed_by_pace_uri():
     ev = envelope_state_snapshot(_ref())
     assert ev["type"] == "STATE_SNAPSHOT"
     assert PACE_EXTENSION_URI in ev["snapshot"]  # B-1: identity by URI
-    assert ev["snapshot"][PACE_EXTENSION_URI]["supported_modalities"] == ["voice", "large_text"]
+    assert ev["snapshot"][PACE_EXTENSION_URI]["supported_modalities"] == ["voice", "text"]
 
 
 # --- interrupt construction --------------------------------------------------

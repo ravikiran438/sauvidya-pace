@@ -51,6 +51,11 @@ Round 1: 11 bug · 4 gap · 2 ok · 1 open (perturbations 16, 17 and 18 were ope
 | 31 | She misses the 10:15 call, then answers at 14:00 | The count resets: an answer ends the run of non-responses | **ok**: `test_an_answer_resets_the_count` |
 | 32 | Three agents (booking, pharmacy, insurance) each call her once on the same day | `max_interactions_per_day` had no reader, and no counting unit was defined: per agent, each was under its limit | **gap**, fixed in C17: counted per principal across all agents; the fourth call is blocked |
 | 33 | An agent checks at 05:00 IST, which is still yesterday in UTC | Counting by her local day: yesterday's calls don't block her first call of the day | **ok**: `test_utc_day_would_count_the_wrong_calls` |
+| 34 | A reader trusts the AgentCard's `supported_modalities` description | It said validators cross-check it against the modality; none did | **bug**, fixed in C18: `validate_channels` checks every channel against it |
+| 35 | Someone compares the agent's channels with the card's and the paper's | Three vocabularies: `voice/text/visual/haptic`, `large_text/simple_visual`, `text_large_font` | **bug**, fixed: one vocabulary (PrimaryChannel, plus `guardian_relay` for fallbacks); a2a-testbed now rejects `large_text` through the manifest |
+| 36 | Her voice channel is down and the plan falls back to a text message, but she cannot read | `fallback_chain` had no reader; the fallback would have been used | **gap**, fixed: every channel, primary and fallback, must reach her; a chain must end in `guardian_relay` or an escalation target |
+
+Round 2: 18 questions — 6 bug · 4 gap · 8 ok · 0 open.
 
 ## Candidates
 
@@ -63,5 +68,4 @@ Round 1: 11 bug · 4 gap · 2 ok · 1 open (perturbations 16, 17 and 18 were ope
 - An agent caches an old AIC version.
 - Her device is offline when an agent needs the PCP.
 - Two orchestrators hold different PCP versions.
-- Her voice channel is down: is `fallback_chain` followed?
 - A reviewer pastes identifiable health details into the public feedback form.
