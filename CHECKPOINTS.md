@@ -88,12 +88,15 @@ limit, and a contract changed after the agents were told.
   waiting 65 hours. Which request goes first is not PACE's call
   (perturbation #39); the experiment queues first come, first served.
 - **Arm 2, a real model given the prompt:** pending. Measures obedience.
-- **a2a-testbed:** pending. The same scenarios as agents over A2A, which
-  also checks the testbed against a known answer.
+- **a2a-testbed ✅:** `run.py --export-testbed` writes the 7 scenarios ×
+  2 arms as a2a-testbed scenarios; every verdict is re-asked of pace-mcp
+  v0.2.0. All 14 pass (105 contacts, 420 checks), and a flipped verdict
+  fails. Building it found that the testbed recorded extension
+  expectations without checking them (perturbation #42).
 - **Perturbation round 3:** see [docs/perturbations.md](docs/perturbations.md).
 
 **Gate for CP4:** the baseline holds on the structural cases in both
-arms, and the a2a-testbed run agrees with the script.
+arms (arm 2 pending); the a2a-testbed run agrees with the script ✅.
 
 ## CP4 — Cost (pending)
 

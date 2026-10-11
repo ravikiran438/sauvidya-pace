@@ -65,3 +65,38 @@ def test_the_referee_is_independent_of_the_arm():
 def test_both_kinds_are_present():
     kinds = {s.kind for s in SCENARIOS}
     assert kinds == {"control", "structural"}
+
+
+def test_export_writes_every_scenario_and_arm(tmp_path):
+    baseline.export_testbed(tmp_path)
+    import json
+
+    expected = json.loads((tmp_path / "expected.json").read_text())
+    assert expected["pace_release"] == baseline.PACE_RELEASE
+    assert len(expected["scenarios"]) == 2 * len(SCENARIOS)
+    for entry in expected["scenarios"]:
+        doc = json.loads((tmp_path / entry["file"]).read_text())
+        assert len(doc["flow"]) == entry["steps"]
+        for agent in doc["agents"]:
+            assert (tmp_path / agent["card"]).exists()
+
+
+def test_exported_verdicts_match_the_mcp_server():
+    """The verdicts the testbed will compare are the ones pace-mcp returns."""
+    pytest.importorskip("mcp")
+    import json
+
+    from pace.mcp_server.tools import HANDLERS
+
+    for scenario in SCENARIOS:
+        for arm in ("prompt", "pace"):
+            doc, expected = baseline.testbed_scenario(scenario, arm)
+            violating = 0
+            for step in doc["flow"]:
+                checks = step["expect"]["extensions"][baseline.PACE_URI]
+                for check in checks:
+                    answer = json.loads(HANDLERS[check["tool"]](check["args"]))
+                    got = "ok" if answer["ok"] else "violation"
+                    assert got == check["verdict"], (scenario.name, arm, check["tool"], answer)
+                violating += any(c["verdict"] == "violation" for c in checks)
+            assert violating == expected["violating_steps"]

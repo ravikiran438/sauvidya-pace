@@ -67,7 +67,10 @@ Round 2: 18 questions — 6 bug · 4 gap · 8 ok · 0 open.
 | 40 | Every contact routes through one hub the family keeps current | A prompt to that hub ties PACE on every case, including agents nobody set up | **ok**: a control; PACE's gain is that agents from other vendors can read her contract without such a hub |
 | 41 | A guardian relay (in CP3's original claim) | Consent is not a contact, so this experiment cannot score it; a perfect listener told "only her consent counts" would refuse the relayed yes | **open**: CCC-4 needs its own measurement |
 
-Round 3: 5 questions — 2 bug · 0 gap · 2 ok · 1 open.
+| 42 | The CP3 scenarios run in a2a-testbed with PACE expectations on each step | The testbed recorded extension expectations and passed every step without asking any server | **bug** (in a2a-testbed), fixed there in 0.3.0a1: checks run on the extension's MCP server and fail closed |
+| 43 | A testbed scenario written against unreleased PACE runs on a machine with the published PACE | The verdicts came from whichever pace-mcp was on the PATH, so the same scenario passed on one machine and failed on the other | **gap**, fixed: PACE 0.2.0 is tagged and the export pins pace-mcp to it |
+
+Round 3: 7 questions — 3 bug · 1 gap · 2 ok · 1 open.
 
 ## Candidates
 

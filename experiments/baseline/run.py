@@ -20,7 +20,15 @@ perfect, a PACE-arm zero is by construction: the experiment measures what
 a prompt cannot carry, not how well an agent obeys. Obedience is the
 second arm's job (a real model given the prompt).
 
-Usage: uv run python experiments/baseline/run.py [--json]
+Usage:
+  uv run python experiments/baseline/run.py [--json]
+  uv run python experiments/baseline/run.py --export-testbed DIR
+
+``--export-testbed`` writes every scenario and arm as an a2a-testbed
+scenario: each contact that reached her is one step, and each rule the
+referee applied is an extension check the testbed runs on pace-mcp with
+the verdict this script expects. The testbed agrees when every step
+passes.
 """
 
 from __future__ import annotations
@@ -28,8 +36,10 @@ from __future__ import annotations
 import argparse
 import heapq
 import json
+import re
 import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -373,10 +383,173 @@ def render(result: dict) -> str:
     return "\n".join(lines)
 
 
+# --- a2a-testbed export ----------------------------------------------------
+
+PACE_URI = "https://ravikiran438.github.io/sauvidya-pace/v1"
+PACE_RELEASE = "v0.2.0"
+PRINCIPAL_AGENT = "her-orchestrator"
+
+
+def _verdict(rule: str, broken: list[str]) -> str:
+    return "violation" if rule in broken else "ok"
+
+
+def contact_checks(scenario: Scenario, contact: Contact, before: list[Contact]) -> list[dict]:
+    """The referee's four rules as pace-mcp tool calls, with the verdict
+    the referee reached. The testbed re-asks the server and compares."""
+    c = scenario.contract_at(contact.at)
+    contract = c.model_dump(mode="json", exclude_none=True)
+    at = contact.at.isoformat()
+    broken = referee(scenario, contact, before)
+    modality = {
+        "agent_id": contact.agent,
+        "principal_id": PCP.principal_id,
+        "pcp_version": PCP.version,
+        "modality_plan": {"primary_channel": "voice", "language": contact.language},
+    }
+    return [
+        {
+            "tool": "validate_time_window",
+            "args": {"contract": contract, "at": at},
+            "verdict": _verdict("AIC-1 window", broken),
+        },
+        {
+            "tool": "validate_daily_limit",
+            "args": {
+                "contract": contract,
+                "prior_contacts": [{"at": b.at.isoformat(), "responded": True} for b in before],
+                "at": at,
+            },
+            "verdict": _verdict("AIC-1 daily limit", broken),
+        },
+        {
+            "tool": "validate_option_count",
+            "args": {"contract": contract, "options_presented": contact.options},
+            "verdict": _verdict("AIC-2 options", broken),
+        },
+        {
+            "tool": "validate_language_match",
+            "args": {
+                "modality": modality,
+                "pcp": PCP.model_dump(mode="json", exclude_none=True),
+                "contract": contract,
+            },
+            "verdict": _verdict("IM-2 language", broken),
+        },
+    ]
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def _card(name: str, description: str) -> dict:
+    return {
+        "name": name,
+        "description": description,
+        "version": "1.0.0",
+        "supportedInterfaces": [{"protocolBinding": "JSONRPC", "url": "http://127.0.0.1:0"}],
+        "capabilities": {},
+        "skills": [{"id": "contact", "name": "Contact", "description": description, "tags": ["cp3"]}],
+        "defaultInputModes": ["text/plain"],
+        "defaultOutputModes": ["text/plain"],
+    }
+
+
+def testbed_scenario(scenario: Scenario, arm: str) -> tuple[dict, dict]:
+    """(scenario document, expected summary) for one scenario and arm."""
+    delivered, outcome = simulate(scenario, arm)
+    agents = [{"id": PRINCIPAL_AGENT, "card": f"cards/{PRINCIPAL_AGENT}.json", "runtime": "python_inproc", "role": "principal"}]
+    agents += [
+        {"id": a.id, "card": f"cards/{a.id}.json", "runtime": "python_inproc", "role": "service_provider"}
+        for a in scenario.agents
+    ]
+    flow = []
+    for n, contact in enumerate(delivered):
+        flow.append(
+            {
+                "from": contact.agent,
+                "to": PRINCIPAL_AGENT,
+                "action": "contact",
+                "message": (
+                    f"contact {n + 1}: {contact.at.isoformat()} on the agent's clock, "
+                    f"{contact.language}, {contact.options} option(s)"
+                ),
+                "expect": {
+                    "response_status": "2xx",
+                    "extensions": {PACE_URI: contact_checks(scenario, contact, delivered[:n])},
+                },
+            }
+        )
+    doc = {
+        "name": f"CP3 {scenario.name} ({arm} arm)",
+        "description": (
+            f"{scenario.kind} case. {scenario.why} Generated by "
+            "experiments/baseline/run.py --export-testbed; do not hand-edit."
+        ),
+        "mode": "sim",
+        "mcp_delegates": "mcp-delegates.yaml",
+        "agents": agents,
+        "flow": flow,
+    }
+    expected = {
+        "scenario": scenario.name,
+        "kind": scenario.kind,
+        "arm": arm,
+        "intents": outcome.intents,
+        "steps": outcome.delivered,
+        "violating_steps": outcome.violating,
+        "per_1000": per_1000(outcome.violating, outcome.intents),
+    }
+    return doc, expected
+
+
+def export_testbed(out: Path) -> list[Path]:
+    """Write every scenario and arm for a2a-testbed. JSON is valid YAML."""
+    (out / "cards").mkdir(parents=True, exist_ok=True)
+    written = []
+
+    def write(rel: str, data: dict) -> None:
+        path = out / rel
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        written.append(path)
+
+    write(f"cards/{PRINCIPAL_AGENT}.json", _card(PRINCIPAL_AGENT, "The principal's own agent; receives every contact."))
+    seen = set()
+    for s in scenarios():
+        for a in s.agents:
+            if a.id not in seen:
+                seen.add(a.id)
+                write(f"cards/{a.id}.json", _card(a.id, f"Agent that contacts the principal ({a.id})."))
+    (out / "mcp-delegates.yaml").write_text(
+        "# pace-mcp pinned to the release the expected verdicts were computed with.\n"
+        "delegates:\n"
+        f"  - uri: {PACE_URI}\n"
+        f"    command: [uvx, --from, 'pace[mcp] @ git+https://github.com/ravikiran438/sauvidya-pace@{PACE_RELEASE}', pace-mcp]\n"
+        "    card_validator_tool: validate_accessibility_service_ref\n",
+        encoding="utf-8",
+    )
+    written.append(out / "mcp-delegates.yaml")
+    summary = []
+    for s in scenarios():
+        for arm in ("prompt", "pace"):
+            doc, expected = testbed_scenario(s, arm)
+            expected["file"] = f"{_slug(s.name)}.{arm}.yaml"
+            write(expected["file"], doc)
+            summary.append(expected)
+    write("expected.json", {"pace_release": PACE_RELEASE, "scenarios": summary})
+    return written
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--json", action="store_true", help="Print the full result as JSON.")
+    parser.add_argument("--export-testbed", type=Path, metavar="DIR", help="Write a2a-testbed scenarios to DIR.")
     args = parser.parse_args(argv)
+    if args.export_testbed:
+        files = export_testbed(args.export_testbed)
+        print(f"wrote {len(files)} files to {args.export_testbed}")
+        return 0
     result = run()
     print(json.dumps(result, indent=2, default=str) if args.json else render(result))
     return 0

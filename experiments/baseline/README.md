@@ -46,7 +46,22 @@ request should go first is decided outside PACE.
 The overall per-1,000 figure depends on the scenario mix, so read the
 per-scenario rows. Commit the script, not the number.
 
+## Running it in a2a-testbed
+
+```bash
+uv run python experiments/baseline/run.py --export-testbed out/
+a2a-testbed run out/never-told.prompt.yaml        # one scenario, one arm
+```
+
+The export writes each scenario and arm as an a2a-testbed scenario
+(`a2a-testbed>=0.3.0a1`): every contact that reached her is a step, and
+the referee's four rules are extension checks the testbed runs on
+pace-mcp, each with the verdict this script expects. `expected.json`
+lists the step and violation counts per file. The delegates file pins
+pace-mcp to the release the verdicts were computed with; pass
+`--mcp-delegates` to use another server. The testbed agrees with the
+script when every step passes.
+
 ## Next
 
 - A second arm with a real model given the prompt, to measure obedience.
-- The same scenarios run as agents over A2A in a2a-testbed.

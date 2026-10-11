@@ -7,6 +7,12 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
 
 ## [Unreleased]
 
+### Added
+
+- `experiments/baseline/run.py --export-testbed DIR`: the CP3 scenarios
+  as a2a-testbed scenarios, with each contact's rules as extension checks
+  on pace-mcp (pinned to v0.2.0) and the verdicts the script expects.
+
 ## [0.2.0] - 2026-10-11
 
 ### Added
