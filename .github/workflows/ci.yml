@@ -29,6 +29,8 @@ jobs:
         run: uv run pace-mcp --doctor
       - name: Every contract field has a reader; every paper field exists
         run: uv run python scripts/contract-readers.py
+      - name: CP3 baseline
+        run: uv run python experiments/baseline/run.py
 
   models:
     name: TLA+ models, witnesses, mutants

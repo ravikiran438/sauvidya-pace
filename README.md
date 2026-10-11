@@ -266,6 +266,7 @@ sauvidya-pace/
 │   ├── mcp_server/           pace-mcp reference MCP server
 │   └── manifest.py           manifest and SPEC.md generator
 ├── tests/                    pytest suite
+├── experiments/baseline/     CP3: PACE vs. telling each agent
 ├── figures/                  Mermaid sources and rendered figures
 ├── adrs/                     architecture decision records
 └── CHANGELOG.md

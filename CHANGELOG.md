@@ -17,6 +17,10 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   PACE Augmentation (includes Agent), declared under `conformance` in
   both manifests and rendered in each `SPEC.md`. A test fails if an
   invariant has no level or a level names an unknown invariant.
+- CP3 baseline, arm 1 (`experiments/baseline/`): perfect-listener agents
+  told by prompt vs. agents under PACE, scored by the PACE validators;
+  reports violations per 1,000 contact intents per scenario and the cost
+  of keeping the rules. Runs in CI.
 - AUG-6 task-scoped step-up: the principal takes one axis back for one
   task with a `StepUpEvent`. Agents stay off that axis in that task
   until the task ends or the principal ends the step-up; passing

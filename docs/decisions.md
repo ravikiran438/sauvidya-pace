@@ -13,6 +13,22 @@ in this file was not made.
   [ADR 001](../adrs/001-accessibility-as-protocol-not-rendering.md). The
   baseline gate in [CHECKPOINTS.md](../CHECKPOINTS.md) exists to turn this
   into a number.
+- Narrowed by CP3 arm 1 (perfect listeners, 2026-10-11): against a good
+  prompt, PACE's gain is reach (agents nobody set up), shared state (one
+  daily limit across agents) and freshness (contract changes after the
+  agents were told). Another clock, a sub-agent and a single kept-current
+  hub tie. Measured by `experiments/baseline/run.py`.
+
+## Scope: what PACE decides and what it does not
+
+- PACE is the envelope around the principal: how an agent may reach her
+  (channel, language, pace, options), when and how often, and whether her
+  consent is real at that moment. It caps; it never chooses.
+- Which request uses her limited contacts, and how urgent a request is,
+  are decided outside PACE by whatever schedules the requests. PACE adds
+  no priority, deadline or urgency field.
+- Emergencies: PACE consumes an `is_emergency` decision and records it;
+  it does not classify urgency.
 
 ## Shape of the protocol
 

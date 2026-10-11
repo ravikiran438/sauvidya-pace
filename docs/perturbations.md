@@ -57,6 +57,18 @@ Round 1: 11 bug · 4 gap · 2 ok · 1 open (perturbations 16, 17 and 18 were ope
 
 Round 2: 18 questions — 6 bug · 4 gap · 8 ok · 0 open.
 
+## Round 3 — during CP3 (2026-10-11)
+
+| # | Say X happens… | What the system did | Result |
+|---|---|---|---|
+| 37 | CP3's claim lists "an agent on another clock" as a case a prompt cannot see | A prompt that names her time zone ties: a perfect listener on Chicago time converts | **bug** (in the claim), fixed: moved to the controls; the claim is narrowed |
+| 38 | CP3's claim lists "a sub-agent that never saw the prompt" | A prompt that says "pass this on" reaches the sub-agent and ties | **bug** (in the claim), fixed: moved to the controls |
+| 39 | Three agents each ask for her twice a day, against a limit of three | PACE keeps the limit, and the last request waits 65 hours; requests queue first come, first served | **ok**, out of scope: PACE caps her contacts, and choosing which request spends them is outside PACE (see Scope in decisions.md) |
+| 40 | Every contact routes through one hub the family keeps current | A prompt to that hub ties PACE on every case, including agents nobody set up | **ok**: a control; PACE's gain is that agents from other vendors can read her contract without such a hub |
+| 41 | A guardian relay (in CP3's original claim) | Consent is not a contact, so this experiment cannot score it; a perfect listener told "only her consent counts" would refuse the relayed yes | **open**: CCC-4 needs its own measurement |
+
+Round 3: 5 questions — 2 bug · 0 gap · 2 ok · 1 open.
+
 ## Candidates
 
 - The PCP is updated mid-call.

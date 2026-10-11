@@ -63,19 +63,37 @@ with enough to act on.
 **Gate for CP3:** does PACE beat prompt-level accommodation on cases a
 prompt cannot see? Measured, not argued, before more protocol is added.
 
-## CP3 — Baseline: PACE vs. telling the agent (pending)
+## CP3 — Baseline: PACE vs. telling the agent (in progress)
 
-**Claim.** On cases a prompt cannot see (a sub-agent that never saw the
-prompt, an agent on another clock, three agents on one day, a guardian
-relay), PACE stops violations that prompt-level accommodation lets through.
+**Claim, narrowed by the measurement.** A good prompt ties PACE wherever
+it can reach the agent with current information: one agent on her clock,
+an agent on another clock (the prompt names her time zone), a sub-agent
+(the prompt is passed on), every contact routed through one hub the
+family keeps current. PACE stops violations a prompt lets through in
+three cases: an agent nobody set up, several agents sharing one daily
+limit, and a contract changed after the agents were told.
 
-- Run the same perturbed scenarios in a2a-testbed twice: agents told
-  "speak Telugu, call 9–11, two options" vs. agents under PACE.
-- **The number:** violations reaching the principal per 1,000
-  interactions, for each arm. Commit the script, not the number.
-- If PACE does not beat the baseline, the thesis in
-  [docs/decisions.md](docs/decisions.md) stays a Belief and is struck or
-  narrowed.
+- **Arm 1, perfect listeners ✅:**
+  [`experiments/baseline/`](experiments/baseline/). Every agent in both
+  arms obeys everything it knows, so the PACE zero is by construction;
+  the arm measures what a prompt cannot carry, not obedience. Runs in CI;
+  `tests/test_baseline.py` holds the claim: controls tie, structural cases
+  differ, the PACE arm has no violations, every intent is delivered or
+  escalated.
+- **The number:** violations reaching her per 1,000 contact intents, per
+  scenario and per kind (control / structural). The overall figure
+  depends on the scenario mix. Commit the script, not the number.
+- **Cost, reported beside it:** deferrals, escalations and the longest
+  wait. Six asks a day against a limit of three leave the last request
+  waiting 65 hours. Which request goes first is not PACE's call
+  (perturbation #39); the experiment queues first come, first served.
+- **Arm 2, a real model given the prompt:** pending. Measures obedience.
+- **a2a-testbed:** pending. The same scenarios as agents over A2A, which
+  also checks the testbed against a known answer.
+- **Perturbation round 3:** see [docs/perturbations.md](docs/perturbations.md).
+
+**Gate for CP4:** the baseline holds on the structural cases in both
+arms, and the a2a-testbed run agrees with the script.
 
 ## CP4 — Cost (pending)
 
@@ -100,6 +118,7 @@ guardian notification.
   (what TLC checks), figures 1 and 2 (annotation design).
 - Alt text for figures on the protocol-stack site.
 - EmergencyRoute: declared, consented, tiered, local to the principal.
+  Takes the urgency decision as input; deciding urgency is out of scope.
 - a2a-testbed: `version` command, `compat` top-level `url`, reference
   agent error codes.
 - PACT: propose a capacity check before its consent page.
