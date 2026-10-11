@@ -49,10 +49,11 @@ Round 1: 11 bug · 4 gap · 2 ok · 1 open (perturbations 16, 17 and 18 were ope
 | 29 | A guardian writes the paper's policy form, `"reject_interaction + notify_guardian"` | Parsed into structured actions; an unknown action is rejected | **ok**: `test_paper_string_form_accepted`, `test_unknown_action_rejected` |
 | 30 | A guardian sets `escalate_after: 3` with `max_retries: 1` | The agent would run out of retries after two misses and never escalate: she would be dropped with nobody told | **gap**, fixed: `NonResponsePolicy` requires `escalate_after <= max_retries + 1`; a test walks every valid policy to escalation |
 | 31 | She misses the 10:15 call, then answers at 14:00 | The count resets: an answer ends the run of non-responses | **ok**: `test_an_answer_resets_the_count` |
+| 32 | Three agents (booking, pharmacy, insurance) each call her once on the same day | `max_interactions_per_day` had no reader, and no counting unit was defined: per agent, each was under its limit | **gap**, fixed in C17: counted per principal across all agents; the fourth call is blocked |
+| 33 | An agent checks at 05:00 IST, which is still yesterday in UTC | Counting by her local day: yesterday's calls don't block her first call of the day | **ok**: `test_utc_day_would_count_the_wrong_calls` |
 
 ## Candidates
 
-- Three agents each call her on the same day: is `max_interactions_per_day` per agent or per principal? (counting unit)
 - The PCP is updated mid-call.
 - Daylight saving time shifts the guardian's clock but not hers.
 - The guardian is unreachable for three days.

@@ -29,6 +29,7 @@ from pace.mcp_server.tools import (
     handle_validate_modality_contract,
     handle_enforce_violation,
     handle_validate_retry,
+    handle_validate_daily_limit,
     handle_validate_principal_capability_profile,
     handle_validate_reversibility,
     handle_validate_skill_maintenance,
@@ -689,3 +690,14 @@ def test_validate_retry_bad_attempt_raises():
         handle_validate_retry(
             {"contract": _contract(), "prior_attempts": [{"at": "soon"}], "at": "2026-10-10T14:00:00+05:30"}
         )
+
+
+def test_validate_daily_limit_reports_remaining_then_blocks():
+    calls = [{"at": f"2026-10-10T{h}:00:00+05:30", "responded": True} for h in ("09", "10")]
+    ok = json.loads(handle_validate_daily_limit(
+        {"contract": _contract(), "prior_contacts": calls, "at": "2026-10-10T14:00:00+05:30"}))
+    assert ok["ok"] is True and ok["remaining_today"] == 1
+    calls.append({"at": "2026-10-10T14:00:00+05:30", "responded": False})
+    blocked = json.loads(handle_validate_daily_limit(
+        {"contract": _contract(), "prior_contacts": calls, "at": "2026-10-10T15:00:00+05:30"}))
+    assert blocked["ok"] is False and "AIC-1" in blocked["error"]

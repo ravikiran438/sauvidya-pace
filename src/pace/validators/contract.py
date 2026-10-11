@@ -26,6 +26,11 @@ class ModalityContractError(ValueError):
         self.problems = list(problems or [])
 
 
+class DailyLimitError(ValueError):
+    """AIC-1: the principal has already been contacted the contract's
+    maximum number of times today."""
+
+
 class RetryViolationError(ValueError):
     """AIC-3: a retry breaks the contract's non-response policy."""
 
@@ -255,4 +260,47 @@ def validate_retry(
             f"AIC-3 violated: retry at {local:%H:%M} {contract.interaction_rules.timezone} "
             f"is in the same window ({last_key[1]}) as the unanswered attempt; "
             "wait for the next valid window"
+        )
+
+
+def _her_day(contract: AdaptiveInteractionContract, moment: datetime):
+    return principal_local_time(contract, moment).date()
+
+
+def interactions_remaining(
+    contract: AdaptiveInteractionContract,
+    prior_contacts: Sequence[ContactAttempt],
+    at: datetime,
+) -> int:
+    """How many more contacts the principal may receive today.
+
+    The counting unit is the principal, across every agent, by her local
+    calendar day. Every agent-initiated contact counts, answered or not: an
+    unanswered call still rang.
+    """
+    today = _her_day(contract, at)
+    used = sum(1 for c in prior_contacts if _her_day(contract, c.at) == today)
+    return max(0, contract.interaction_rules.max_interactions_per_day - used)
+
+
+def validate_daily_limit(
+    contract: AdaptiveInteractionContract,
+    prior_contacts: Sequence[ContactAttempt],
+    at: datetime,
+    is_emergency: bool = False,
+) -> None:
+    """AIC-1, daily limit: no more than ``max_interactions_per_day`` contacts
+    on her local calendar day, from all agents together. Emergencies are
+    never blocked, but they are counted like any other contact.
+    """
+    if is_emergency:
+        return
+    if interactions_remaining(contract, prior_contacts, at) == 0:
+        limit = contract.interaction_rules.max_interactions_per_day
+        local = principal_local_time(contract, at)
+        raise DailyLimitError(
+            f"AIC-1 violated: {contract.principal_id!r} has already been "
+            f"contacted {limit} time(s) on {local:%a %d %b} "
+            f"({contract.interaction_rules.timezone}), the contract's daily "
+            "limit across all agents; wait until tomorrow her time"
         )

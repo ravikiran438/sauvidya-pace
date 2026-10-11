@@ -73,8 +73,14 @@ in this file was not made.
   Linux ship the zone database.
 - `max_interactions_per_day` counts per principal, across all agents, by
   her local calendar day. Three agents calling once each are three calls
-  to her; a UTC day would reset at 05:30 her time. Decided 2026-10-10;
-  enforcement in CP2.
+  to her; a UTC day would reset at 05:30 her time. Enforced by
+  `validate_daily_limit` (C17).
+- Every agent-initiated contact counts, answered or not: an unanswered
+  call still rang. **Belief.**
+- Emergencies are never blocked by the daily limit but are counted.
+  **Belief.**
+- The daily limit is part of AIC-1 rather than a new invariant: both
+  answer "may an agent contact her right now?".
 
 ## The contract and the agent's plan
 

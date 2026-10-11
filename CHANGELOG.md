@@ -54,6 +54,10 @@ draft protocol: until 1.0.0, minor versions may change the wire format.
   `validate_retry`.
 - `scripts/contract-readers.py` also reports contract fields the paper
   names but the code does not define.
+- AIC-1 daily limit: `validate_daily_limit` and
+  `interactions_remaining` count every contact per principal, across all
+  agents, by her local calendar day; emergencies are never blocked but
+  are counted. MCP tool `validate_daily_limit`.
 - AIC-4 `enforce_violation`: applies the contract's violation policy and
   returns the actions, whether to broadcast a block, and a
   `GuardianNotification` (plain-language summary, both clocks, actions

@@ -25,7 +25,8 @@ Sundown block 17:00–08:00 IST.
   morning, wants to confirm the booking. Nothing happens: her contract's
   windows are in her time zone, so it waits for 09:00 IST.
 - **She never** hears English, gets more than two choices, gets a call
-  during sundown, or has her "yes" stand in for a decision she didn't follow.
+  during sundown, gets more than three calls a day from all agents
+  together, or has her "yes" stand in for a decision she didn't follow.
 
 Surfaces: Telugu voice through a sub-agent, the AIC, the capacity check,
 the consent annotation.

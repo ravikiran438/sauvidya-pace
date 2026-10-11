@@ -64,6 +64,9 @@ from pace.validators import (
     validate_retry,
     ContactAttempt,
     RetryViolationError,
+    DailyLimitError,
+    interactions_remaining,
+    validate_daily_limit,
 )
 
 # augmentation_profile extension (AUG-1..AUG-6).
@@ -319,6 +322,35 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 "at": {"type": "string", "format": "date-time"},
             },
             "required": ["contract", "prior_attempts", "at"],
+        },
+    },
+    "validate_daily_limit": {
+        "description": (
+            "AIC-1, daily limit: may an agent contact the principal now, "
+            "given every contact she has had from any agent? Counts by her "
+            "local calendar day, answered or not; emergencies are never "
+            "blocked. Returns the contacts remaining today. prior_contacts: "
+            "[{at, responded}]."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "contract": {"type": "object"},
+                "prior_contacts": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "at": {"type": "string", "format": "date-time"},
+                            "responded": {"type": "boolean"},
+                        },
+                        "required": ["at"],
+                    },
+                },
+                "at": {"type": "string", "format": "date-time"},
+                "is_emergency": {"type": "boolean"},
+            },
+            "required": ["contract", "prior_contacts", "at"],
         },
     },
     "enforce_violation": {
@@ -731,6 +763,31 @@ def handle_validate_retry(arguments: dict[str, Any]) -> str:
     return _ok({"retry": "allowed"})
 
 
+def handle_validate_daily_limit(arguments: dict[str, Any]) -> str:
+    contract = _parse(
+        AdaptiveInteractionContract, arguments.get("contract"), "contract"
+    )
+    raw = arguments.get("prior_contacts")
+    if not isinstance(raw, list):
+        raise ToolInvocationError("prior_contacts must be a list of objects")
+    is_emergency = arguments.get("is_emergency", False)
+    if not isinstance(is_emergency, bool):
+        raise ToolInvocationError("is_emergency must be a boolean")
+    try:
+        prior = [
+            ContactAttempt(datetime.fromisoformat(c["at"]), bool(c.get("responded", False)))
+            for c in raw
+        ]
+        at = datetime.fromisoformat(arguments.get("at"))
+        remaining = interactions_remaining(contract, prior, at)
+        validate_daily_limit(contract, prior, at, is_emergency=is_emergency)
+    except DailyLimitError as exc:
+        return _fail(str(exc))
+    except (TypeError, KeyError, ValueError) as exc:
+        raise ToolInvocationError(f"bad contact or timestamp: {exc}") from exc
+    return _ok({"daily_limit": "within", "remaining_today": remaining})
+
+
 def handle_enforce_violation(arguments: dict[str, Any]) -> str:
     contract = _parse(
         AdaptiveInteractionContract, arguments.get("contract"), "contract"
@@ -986,6 +1043,7 @@ HANDLERS: dict[str, Any] = {
     "validate_option_count": handle_validate_option_count,
     "validate_modality_contract": handle_validate_modality_contract,
     "validate_retry": handle_validate_retry,
+    "validate_daily_limit": handle_validate_daily_limit,
     "enforce_violation": handle_enforce_violation,
     # augmentation_profile extension
     "validate_reversibility": handle_validate_reversibility,

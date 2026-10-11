@@ -57,6 +57,7 @@ async def test_server_lists_tools_over_stdio():
         "validate_modality_contract",
         "enforce_violation",
         "validate_retry",
+        "validate_daily_limit",
         # augmentation_profile extension
         "validate_reversibility",
         "validate_identity_preservation",

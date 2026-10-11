@@ -50,8 +50,10 @@ violation reaches the guardian with enough to act on.
 - ✅ AIC-3: `non_response_policy` with `validate_retry`, and a check that
   every contract field the paper names exists in the code (perturbations
   25, 27). Missing paper fields: 4 → 0.
-- Remaining unread fields, 4 of 22: `max_interactions_per_day` (counting
-  unit), `guardian_cc`, `escalation_on_confusion`, `fallback_chain`.
+- ✅ `max_interactions_per_day` enforced per principal across agents, by
+  her local day (C17). Unread fields: 4 → 3 of 22.
+- Remaining unread fields: `guardian_cc`, `escalation_on_confusion`,
+  `fallback_chain`. Cut or park unless a story needs them.
 - A decided counting unit for `max_interactions_per_day`.
 - **Exit:** 0 unread fields; the guardian story in
   [docs/consumer.md](docs/consumer.md) runs ✅ (fixture).
